@@ -76,19 +76,23 @@ code: |
   # Set the allowed courts for this interview
   allowed_courts = interview_metadata["simpmotion"]["allowed courts"]
   nav.set_section('review_simpmotion')
-  Welcome
-  Using_this_Tool
-  Navigation_and_Saving_Your_Form
-  agree_to_pii
-  if agree_to_pii == False:
-    pii_must_agree
-  Already_Have_a_Court_Case
-  if Already_Have_a_Court_Case == False:
-    already_have_case_must_agree
+  welcome
+  using_this_tool
+  navigation_and_saving
+  pii_policy
+  if pii_policy == False:
+    pii_policy_agree
+  existing_case
+  if existing_case == False:
+    existing_case_agree
   set_progress(11)
-  Make_Sure_this_Tool_is_Right_for_Your_Situation
-  Check_for_SCAOApproved_Forms
-  You_May_Want_to_Speak_with_a_Lawyer
+  right_tool
+  if right_tool == False:
+    right_tool_agree
+  approved_form
+  if approved_form == False:
+    approved_form_agree
+  speak_to_lawyer
   # Below sets the user_role by asking a question.
   # You can set user_role directly instead to either 'plaintiff' or 'defendant'
   user_ask_role
@@ -164,15 +168,15 @@ question: |
 subquestion: |
   Welcome to Michigan Legal Help's Do-It-Yourself Notice of Hearing and Motion. This tool will help you prepare a Notice of Hearing and Motion. Use this tool if you already have a court case and you need to ask the judge to do something in that case. 
   
-  This tool does not cover all situations. If you find this tool is not right for you, use the Guide to Legal Help to search for a lawyer or legal services in your area.
-continue button field: Welcome
+  This tool does not cover all situations. If you find this tool is not right for you, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to search for a lawyer or legal services in your area.
+continue button field: welcome
 ---
 id: Using this Tool
 question: |
   Using this Tool
 subquestion: |
   Your personalized Notice of Hearing and Motion along with a checklist of step-by-step instructions will be ready after you have answered all the questions. It should take you between 15 and 30 minutes to answer all the questions.
-continue button field: Using_this_Tool
+continue button field: using_this_tool
 ---
 id: Navigation and Saving Your Form
 question: |
@@ -181,7 +185,7 @@ subquestion: |
   If you make a mistake at any time or want to review your answers, use the Next, Previous, First, and Last buttons below. You can move to a specific page by clicking on it in the left pane of this window. If you can't finish today, you can save your answers by creating a username and password on the LawHelp Interactive website. This lets you log back into the site later and finish, or go back and change any of your answers. 
   
   Make note of your username and password.
-continue button field: Navigation_and_Saving_Your_Form
+continue button field: navigation_and_saving
 ---
 id: Private Information
 question: |
@@ -195,12 +199,12 @@ subquestion: |
   * Passport number
   * Financial account numbers
   
-  If a question doesn't specifically ask for personal identifying information, do not include it in your answers. If this type of information is needed, this tool will specifically ask for the information and it will go on a separate non-public form that you will file along with the other documents. This DIY tool will automatically produce that form if you need it.
+  **If a question doesn't specifically ask for personal identifying information, do not include it in your answers.** If this type of information is needed, this tool will specifically ask for the information and it will go on a separate non-public form that you will file along with the other documents. This DIY tool will automatically produce that form if you need it.  
   
   Do you understand that you should only enter personal identifying information if this tool specifically asks for it?
-yesno: agree_to_pii
+yesno: pii_policy
 ---
-event: pii_must_agree
+event: pii_policy_agree
 question: |
   You cannot continue to use the tool.
 subquestion: |
@@ -215,16 +219,16 @@ id: You Must Already Have a Court Case to Use This Tool
 question: |
   You Must Already Have a Court Case to Use This Tool
 subquestion: |
-  A motion is a way to ask a judge to do something in an existing court case. You cannot use a motion to start a new case. You will need information such as the judge, court, and case number of the ongoing case to fill out a motion. It will help if you have other documents from the case (like the complaint, petition, or answer) nearby so you can look for information there.
+  A motion is a way to ask a judge to do something in an existing court case. You **cannot use a motion to start a new case**. You will need information such as the judge, court, and case number of the ongoing case to fill out a motion. It will help if you have other documents from the case (like the complaint, petition, or answer) nearby so you can look for information there. 
   
   Do you have an existing case in a Michigan court?
-yesno: Already_Have_a_Court_Case
+yesno: existing_case
 ---
-event: already_have_case_must_agree
+event: existing_case_agree
 question: |
   You cannot continue to use the tool.
 subquestion: |
-  Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. You must already have a case in court to file a motion. Michigan Legal Help may have information about starting the kind of case you need. Use the Guide to Legal Help to search for information or to find a lawyer or legal services in your area. 
+  Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. You must already have a case in court to file a motion. Michigan Legal Help may have information about starting the kind of case you need. Use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to search for information or to find a lawyer or legal services in your area. 
   
   If you made a mistake, click the **Undo** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
 buttons:
@@ -239,29 +243,41 @@ subquestion: |
   
   Michigan Legal Help has some tools to help you draft more specific motions. The more specific tools will help you make sure that you do the best job you can of meeting the requirements of that kind of motion. If there is a specific tool, you should use that tool instead of this one. Review the tools at the link below carefully to find out if there is a specific motion tool you should use:
   
-  Follow this link to a list of all the tools on Michigan Legal Help.
+  Follow this [link to a list of all the tools on Michigan Legal Help](https://michiganlegalhelp.org/all-forms).
   
   Do any of the tools on that page fit what you are trying to do?
+noyes: right_tool
+---
+event: right_tool_agree
+question: |
+  You cannot continue to use the tool.
+subquestion: |
+  This tool is not right for you. Please use the tool from [this page](https://michiganlegalhelp.org/all-forms) that applies to you instead. 
   
-  Yes → This tool is not right for you. Instead of using this tool to prepare a motion, please follow the link above that applies to you. 
-  If you made a mistake, change your answer above to continue. Otherwise, click Exit. 
-  
-  No→ continue
-continue button field: Make_Sure_this_Tool_is_Right_for_Your_Situation
+  If you made a mistake, click the **Undo** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+buttons:
+  - Exit: exit
+    url: https://michiganlegalhelp.org
 ---
 id: Check for SCAO Approved Forms
 question: |
   Check for SCAO-Approved Forms
 subquestion: |
-  The State Court Administrative Office has court forms for some kinds of motions. Follow this link to the list of SCAO-approved forms to find out if they have a form for the kind of request you need in your case. 
+  The State Court Administrative Office (SCAO) has court forms for some kinds of motions. Follow this [link to the list of SCAO-approved forms](https://www.courts.michigan.gov/SCAO-forms/) to find out if they have a form for the kind of request you need in your case. 
   
   Did you find a form that applies to your case?
+noyes: approved_form
+---
+event: approved_form_agree
+question: |
+  You cannot continue to use the tool.
+subquestion: |
+  This tool is not right for you. Instead of using this tool to prepare a motion, please use the SCAO-approved form that applies to your case. 
   
-  Yes → This tool is not right for you. Instead of using this tool to prepare a motion, please use the SCAO-approved form that applies to your case. 
-  If you made a mistake, change your answer above to continue. Otherwise, click Exit. 
-  
-  No→ continue
-continue button field: Check_for_SCAOApproved_Forms
+  If you made a mistake, click the **Undo** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+buttons:
+  - Exit: exit
+    url: https://michiganlegalhelp.org
 ---
 id: You May Want to Speak with a Lawyer
 question: |
@@ -269,10 +285,10 @@ question: |
 subquestion: |
   This tool will help you to fill out a Notice of Hearing and Motion. There are many kinds of motions. Some have specific things you need to prove, and if you do not meet all of the requirements the judge will not grant your motion. 
   
-  This tool will not guide you through the legal elements that you would need to show to have a judge grant your motion because that depends on the kind of case and kind of motion you are filing. This tool will only help you fill in the form. What you write and argue is up to you.
+  This tool will **not** guide you through the legal elements that you would need to show to have a judge grant your motion because that depends on the kind of case and kind of motion you are filing. This tool will only help you fill in the form. What you write and argue is up to you.
   
-  You may want to speak to a lawyer. You can use the Guide to Legal Help to find a lawyer or legal services office in your area if you want more help.
-continue button field: You_May_Want_to_Speak_with_a_Lawyer
+  You may want to speak to a lawyer. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to find a lawyer or legal services office in your area if you want more help.
+continue button field: speak_to_lawyer
 ---
 id: Trial Court County
 question: |
@@ -363,7 +379,8 @@ subquestion: |
   If you are not sure of the title you can leave this blank and neatly write it by hand before you file it in court.
 fields:
   - "Motion Title": motion_title
-    maxlength: 81
+    maxlength: 85
+    required: False
 ---
 id: Your Motion
 question: |
