@@ -1,0 +1,751 @@
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ALAnyState:any_state.yml
+---
+metadata:
+  title: |
+    Motion and Notice of Hearing
+  short title: |
+    Motion and Hearing
+  tags:
+  # Could tag this with legal subject areas
+    - Other
+  authors:
+    - Michigan Legal Help
+---
+mandatory: True
+comment: |
+  Global interview metadata
+variable name: interview_metadata["simpmotion"]
+data:
+  al_weaver_version: "1.7.0"
+  generated on: "2022-08-19"
+  title: >-
+    Motion and Notice of Hearing
+  short title: >-
+    Motion and Hearing
+  description: |-
+    Use this form to file a motion in an existing case if no more specific form is available.
+  original_form: >-
+    https://www.courts.michigan.gov/4a2c89/siteassets/forms/scao-approved/mc326.pdf
+  allowed courts: 
+    - "Circuit Court"
+    - "District Court"
+  categories:
+  # could tag legal subject areas
+    - "Various"
+  typical role: "unknown"
+  generate download screen: True
+---
+code: |
+  interview_metadata['main_interview_key'] =  'simpmotion'
+---
+code: |
+  # This controls the default country and list of states in address field questions
+  AL_DEFAULT_COUNTRY = "US"
+---
+code: |
+  # This controls the default state in address field questions
+  AL_DEFAULT_STATE = "MI"
+---
+code: |
+  github_repo_name =  'docassemble-Simpmotion'
+---
+code: |
+  interview_short_title = "File a motion and notice of hearing in your case"
+---
+code: |
+  al_form_type = "existing_case" 
+---
+objects:
+  - users: ALPeopleList.using(ask_number=True,target_number=1)
+  - defendants_attorney: ALPeopleList.using(there_are_any=True)
+  - plaintiffs_attorney: ALPeopleList.using(there_are_any=True)
+  - trial_court: Organization
+  - judge: ALPeopleList.using(ask_number=True,target_number=1)
+---
+sections:
+  - review_simpmotion: Review your answers
+---
+#################### Interview order #####################
+comment: |
+  Controls order and branching logic for questions specific to this form
+id: interview_order_simpmotion
+code: |
+  # Set the allowed courts for this interview
+  allowed_courts = interview_metadata["simpmotion"]["allowed courts"]
+  nav.set_section('review_simpmotion')
+  Welcome
+  Using_this_Tool
+  Navigation_and_Saving_Your_Form
+  agree_to_pii
+  if agree_to_pii == False:
+    pii_must_agree
+  Already_Have_a_Court_Case
+  if Already_Have_a_Court_Case == False:
+    already_have_case_must_agree
+  set_progress(11)
+  Make_Sure_this_Tool_is_Right_for_Your_Situation
+  Check_for_SCAOApproved_Forms
+  You_May_Want_to_Speak_with_a_Lawyer
+  # Below sets the user_role by asking a question.
+  # You can set user_role directly instead to either 'plaintiff' or 'defendant'
+  user_ask_role
+  trial_court
+  # Bryce added below as placeholder to be replaced by something for Michigan courts later?
+  trial_court.name.text = "Trial Court"
+  trial_court.address.county
+  court_type
+  docket_number
+  set_progress(22)
+  trial_court.phone_number
+  judge.name
+  trial_court_bar_number
+  set_progress(33)
+  plaintiffs.gather()
+  plaintiffs_attorney.gather()
+  plaintiffs_attorney[0].phone_number
+  plaintiffs_attorney[0].address.address
+  plaintiffs_attorney_bar_number
+  set_progress(44)
+  defendants.gather()
+  defendants_attorney.gather()
+  defendants_attorney[0].phone_number
+  defendants_attorney[0].address.address
+  defendants_attorney_bar_number
+  set_progress(55)
+  motion_title
+  motion_body
+  hearing_time
+  hearing_at_court
+  hearing_address_on_one_line
+  set_progress(66)
+  users.gather()
+  set_parts(subtitle=str(users))
+  signature_date
+  service_date
+  users.signature_1
+  users.signature_2
+  interview_order_simpmotion = True
+---
+###################### Main order ######################
+comment: |
+  This block includes the logic for standalone interviews.
+  Delete mandatory: True to include in another interview
+mandatory: True
+code: |
+  al_intro_screen
+  # simpmotion_intro
+  interview_order_simpmotion
+  signature_date
+  # Store anonymous data for analytics / statistics
+  store_variables_snapshot(
+      persistent=True,
+      data={
+          "zip": showifdef("users[0].address.zip"),
+          "reached_interview_end": True,
+      },
+  )
+  simpmotion_download
+---
+comment: |
+  This question is used to introduce your interview. Please customize
+id: Motion_and_Notice_of_Hearing
+continue button field: simpmotion_intro
+question: |
+  Motion and Notice of Hearing
+subquestion: |
+  You will need information about you case, the parties, and what you want the court to do.
+---
+id: Welcome
+question: |
+  Welcome
+subquestion: |
+  Welcome to Michigan Legal Help's Do-It-Yourself Notice of Hearing and Motion. This tool will help you prepare a Notice of Hearing and Motion. Use this tool if you already have a court case and you need to ask the judge to do something in that case. 
+  
+  This tool does not cover all situations. If you find this tool is not right for you, use the Guide to Legal Help to search for a lawyer or legal services in your area.
+continue button field: Welcome
+---
+id: Using this Tool
+question: |
+  Using this Tool
+subquestion: |
+  Your personalized Notice of Hearing and Motion along with a checklist of step-by-step instructions will be ready after you have answered all the questions. It should take you between 15 and 30 minutes to answer all the questions.
+continue button field: Using_this_Tool
+---
+id: Navigation and Saving Your Form
+question: |
+  Navigation and Saving Your Form
+subquestion: |
+  If you make a mistake at any time or want to review your answers, use the Next, Previous, First, and Last buttons below. You can move to a specific page by clicking on it in the left pane of this window. If you can't finish today, you can save your answers by creating a username and password on the LawHelp Interactive website. This lets you log back into the site later and finish, or go back and change any of your answers. 
+  
+  Make note of your username and password.
+continue button field: Navigation_and_Saving_Your_Form
+---
+id: Private Information
+question: |
+  Private Information
+subquestion: |
+  To protect privacy, you **cannot** include personal identifying information in public documents that are filed in court. Personal identifying information includes:
+ 
+  * Date of birth
+  * Social security or national identification number
+  * Driver’s license or state identification number
+  * Passport number
+  * Financial account numbers
+  
+  If a question doesn't specifically ask for personal identifying information, do not include it in your answers. If this type of information is needed, this tool will specifically ask for the information and it will go on a separate non-public form that you will file along with the other documents. This DIY tool will automatically produce that form if you need it.
+  
+  Do you understand that you should only enter personal identifying information if this tool specifically asks for it?
+yesno: agree_to_pii
+---
+event: pii_must_agree
+question: |
+  You cannot continue to use the tool.
+subquestion: |
+  You cannot continue with this tool unless you understand that you should not enter any personal identifying information that the tool does not specifically ask for. 
+  
+  If you made a mistake, click the **Undo** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+buttons:
+  - Exit: exit
+    url: https://michiganlegalhelp.org
+---
+id: You Must Already Have a Court Case to Use This Tool
+question: |
+  You Must Already Have a Court Case to Use This Tool
+subquestion: |
+  A motion is a way to ask a judge to do something in an existing court case. You cannot use a motion to start a new case. You will need information such as the judge, court, and case number of the ongoing case to fill out a motion. It will help if you have other documents from the case (like the complaint, petition, or answer) nearby so you can look for information there.
+  
+  Do you have an existing case in a Michigan court?
+yesno: Already_Have_a_Court_Case
+---
+event: already_have_case_must_agree
+question: |
+  You cannot continue to use the tool.
+subquestion: |
+  Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. You must already have a case in court to file a motion. Michigan Legal Help may have information about starting the kind of case you need. Use the Guide to Legal Help to search for information or to find a lawyer or legal services in your area. 
+  
+  If you made a mistake, click the **Undo** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+buttons:
+  - Exit: exit
+    url: https://michiganlegalhelp.org
+---
+id: Make Sure this Tool is Right for Your Situation
+question: |
+  Make Sure this Tool is Right for Your Situation
+subquestion: |
+  This tool will help you prepare a general motion if there is not a more specific form to use. There are some types of motions that have specific requirements. 
+  
+  Michigan Legal Help has some tools to help you draft more specific motions. The more specific tools will help you make sure that you do the best job you can of meeting the requirements of that kind of motion. If there is a specific tool, you should use that tool instead of this one. Review the tools at the link below carefully to find out if there is a specific motion tool you should use:
+  
+  Follow this link to a list of all the tools on Michigan Legal Help.
+  
+  Do any of the tools on that page fit what you are trying to do?
+  
+  Yes → This tool is not right for you. Instead of using this tool to prepare a motion, please follow the link above that applies to you. 
+  If you made a mistake, change your answer above to continue. Otherwise, click Exit. 
+  
+  No→ continue
+continue button field: Make_Sure_this_Tool_is_Right_for_Your_Situation
+---
+id: Check for SCAO Approved Forms
+question: |
+  Check for SCAO-Approved Forms
+subquestion: |
+  The State Court Administrative Office has court forms for some kinds of motions. Follow this link to the list of SCAO-approved forms to find out if they have a form for the kind of request you need in your case. 
+  
+  Did you find a form that applies to your case?
+  
+  Yes → This tool is not right for you. Instead of using this tool to prepare a motion, please use the SCAO-approved form that applies to your case. 
+  If you made a mistake, change your answer above to continue. Otherwise, click Exit. 
+  
+  No→ continue
+continue button field: Check_for_SCAOApproved_Forms
+---
+id: You May Want to Speak with a Lawyer
+question: |
+  You May Want to Speak with a Lawyer
+subquestion: |
+  This tool will help you to fill out a Notice of Hearing and Motion. There are many kinds of motions. Some have specific things you need to prove, and if you do not meet all of the requirements the judge will not grant your motion. 
+  
+  This tool will not guide you through the legal elements that you would need to show to have a judge grant your motion because that depends on the kind of case and kind of motion you are filing. This tool will only help you fill in the form. What you write and argue is up to you.
+  
+  You may want to speak to a lawyer. You can use the Guide to Legal Help to find a lawyer or legal services office in your area if you want more help.
+continue button field: You_May_Want_to_Speak_with_a_Lawyer
+---
+id: Trial Court County
+question: |
+  What county is the trial court in?
+fields:
+  - "Trial court county": trial_court.address.county
+    maxlength: 25
+---
+id: Choose a court
+question: |
+  % if al_form_type == 'starts_case':
+  What court do you want to file in?
+  % elif al_form_type == 'appeal':
+  What is the name of the trial court your case was originally filed in?
+  % else:
+  What court is your case in?
+  % endif
+subquestion: |
+  % if not al_form_type == 'starts_case':
+  Look at your court paperwork. Match the information listed there. You may need to contact the court or check its website for the address.
+  % endif
+fields:
+  - Type of court: court_type
+    input type: radio
+    choices:
+      - Circuit Court: court_is_circuit
+      - District Court: court_is_district
+  - "Circuit Court Number": trial_court.circuit
+    show if: 
+      variable: court_type
+      is: court_is_circuit
+    maxlength: 4
+  - "District Court Number": trial_court.district
+    show if: 
+      variable: court_type
+      is: court_is_district
+    maxlength: 4  
+  - Address: trial_court_address.address
+    address autocomplete: True
+    required: False
+  - Suite: trial_court_address.unit
+    required: False
+  - City: trial_court_address.city
+    required: False
+  - State: trial_court_address.state
+    required: False
+  - Postal code: trial_court_address.zip    
+    required: False
+---
+id: What is the trial court s phone number
+question: |
+  What is the trial court's phone number?
+fields:
+  - "Trial court's phone number": trial_court.phone_number
+    maxlength: 14
+---
+id: What is the judge s bar number
+question: |
+  What is the judge's bar number?
+fields:
+  - "Judge's bar number": trial_court_bar_number
+    maxlength: 9
+---
+id: Plaintiff or Petitioner s Attorney Information
+question: |
+  Plaintiff or Petitioner's Attorney Information
+fields:
+  - "Plaintiff's or Petitioner's attorney's bar number": plaintiffs_attorney_bar_number
+    maxlength: 11
+---
+id: Defendant or Respondent s Attorney Information
+question: |
+  Defendant or Respondent's Attorney Information
+fields:
+  - "Defendant's or Respondent's attorney's bar number": defendants_attorney_bar_number
+    maxlength: 8
+---
+id: Motion Title
+question: |
+  Motion Title
+subquestion: |
+  Fill in the blank below with the title of your motion. This must be short and fit on one line. It should briefly tell the judge what you are asking for. 
+  
+  A motion is a document you use to ask the judge to do something. If you are having trouble deciding what to name the motion, think of the word “Motion” as meaning “I want to ask the judge” For example, if you are getting divorced and want to waive the waiting period you might  say “I want to ask the judge to waive the statutory waiting period.” In that situaiotn the motion title could be “Motion to Waive the Statutory Waiting Period.”
+  
+  Motion [blank line with a character limit of 85, optional field]
+  
+  If you are not sure of the title you can leave this blank and neatly write it by hand before you file it in court.
+fields:
+  - "Motion Title": motion_title
+    maxlength: 81
+---
+id: Your Motion
+question: |
+  Your Motion
+subquestion: |
+  A motion is a written request to a judge. A motion must have a written statement that gives the judge reasons why they should do what you are asking. 
+  
+  Whether or not the judge grants your motion will depend on the facts and the laws that apply in your case. Your motion will be more persuasive if you are very clear about what you are asking for and give good legal support for your request. Here are a few ways to write a good motion:
+  Start and end by directly asking for what you want. For example, you could start by saying: “I request that the court waive the waiting period in my divorce.” After writing the support for your request you could end by saying: “For all of the reasons listed above, I respectfully request that the court waive the waiting period in my divorce.”
+  Be brief. Give good reasons why the judge should do what you are asking but make sure that you stay focused on the specific issues related to the request.
+  Include attachments if they support your arguments. If you have a document or photo that supports a statement you make, you can attach an exhibit. For example, you could write: “My spouse has been physically abusive and I got a Personal Protection Order in 2019. See Exhibit A.” If you reference any exhibits in your motion be sure to label and attach them to your finished forms before filing in court. In the example here you would clearly write “Exhibit A” on a copy of the 2019 protection order and attach it to the motion.
+  Do your best to understand what rules the judge will follow when deciding your motion. For example, if the law says that the judge can grant a motion in your case if you show a change in circumstances, be sure to explain the change in circumstances. If the court rules say you must show good cause, explain the good cause. It is a good idea to use those specific words. For example, if you need to show good cause, say “There is good cause because…”
+  Do not include any personal identifying information. Personal identifying information includes: date of birth, social security or national identification number, driver’s license or state identification number, passport number, and financial account numbers. If a court rule or law requires you to include this information or if the information is necessary for identification purposes you must fill out form MC 97 (if the information is related to a defendant, respondent, or decedent) or form MC 97a (if the information is about a plaintiff, petitioner, or anyone else not included in MC 97). Include the information on MC 97 and do not include it in the Motion. Instead, include a reference in the Motion to ask the judge to see MC 97 for the information.
+  
+  Use the space below to tell the judge what you want and to give reasons for it. This tool will not automatically save your work. If you will need to spend some time writing you may want to create an account and save your work a few times as you write. If you want to save your answers [insert language about how to save answers here]
+fields:
+  - "Your motion": motion_body
+    input type: area
+    maxlength: 1209
+---
+id: When will the hearing be
+question: |
+  When will the hearing be?
+fields:
+  - "Hearing Time": hearing_time
+    maxlength: 13
+  - "Date of hearing": hearing_date
+    datatype: date
+---
+id: Will the hearing be held at the courthouse
+question: |
+  Will the hearing be held at the courthouse?
+yesno: hearing_at_court
+---
+id: Judge name
+question: |
+  What is the judge's name?
+fields:
+  - "Judge's name": judge.name
+    maxlength: 40
+---
+id: What is the address for the hearing
+question: |
+  What is the address for the hearing?
+fields:
+  - "Address of the hearing": hearing_address_on_one_line
+    maxlength: 66
+---
+id: When will you serve the other party or parties
+question: |
+  When will you serve the other party or parties?
+subquestion: |
+  If you are not sure, you can leave this blank and neatly write it by hand before you file it in court.
+fields:
+  - "Date of Service": service_date
+    datatype: date
+---
+question: |
+  Sign your name
+subquestion: |
+  Please sign your full name in the box below.  This will be your electronic signature for the motion.
+signature: users.signature_1
+---
+question: |
+  Sign your name
+subquestion: |
+  signature for service if e-filing.
+signature: users.signature_2
+---
+id: preview simpmotion
+question: |
+  Preview your form before you sign it
+subquestion: |
+  Here is a preview of the form you will sign on the next page.   
+  
+  ${ al_court_bundle.as_pdf(key='preview') }
+
+  Click the image to open it in a new tab. Click the "Edit answers" button
+  to edit your answers.
+
+  ${ action_button_html(url_action('review_simpmotion'), label='Edit answers', color='info') }
+  
+  Remember to come back to this window to continue and sign your form.
+continue button field: simpmotion_preview_question    
+---
+code: |
+  signature_fields = ['users.signature_1', 'users.signature_2']
+---
+code: |
+  # This is a placeholder for the addresses that will be searched
+  # for matching address to court. Edit if court venue is based on 
+  # a different address than the user's
+  addresses_to_search = [user.address for user in users]
+---
+id: simpmotion review screen
+event: review_simpmotion
+question: |
+  Review your answers
+review:
+  - Edit: trial_court.circuit
+    button: |
+      **Circuit Court Number**:
+      ${ trial_court_circuit }
+  - Edit: trial_court.district
+    button: |
+      **District Court Number**:
+      ${ trial_court_district }
+  - Edit: trial_court
+    button: |
+      **trial_court**
+
+      % if defined("trial_court.address"):
+      * address: ${ trial_court.address.block() }
+      % endif
+      % if defined("trial_court.phone_number"):
+      * phone_number: ${ trial_court.phone_number }
+      % endif
+      % if defined("judge.name.first"):
+      * name: ${ judge.name.full() }
+      % endif
+  - Edit: docket_number
+    button: |
+      **Docket number**:
+      ${ docket_number }
+  - Edit: plaintiffs.revisit
+    button: |
+      **Plaintiffs**
+
+      % for item in plaintiffs:
+        * ${ item }
+      % endfor
+  - Edit: defendants.revisit
+    button: |
+      **Defendants**
+
+      % for item in defendants:
+        * ${ item }
+      % endfor
+  - Edit: plaintiffs_attorney_bar_number
+    button: |
+      **Plaintiff\'s or Petitioner\'s attorney\'s bar number**:
+      ${ plaintiffs_attorney_bar_number }
+  - Edit: plaintiffs_attorney.revisit
+    button: |
+      **Plaintiffs attorney**
+
+      % for item in plaintiffs_attorney:
+        * ${ item }
+      % endfor
+  - Edit: defendants_attorney.revisit
+    button: |
+      **Defendants attorney**
+
+      % for item in defendants_attorney:
+        * ${ item }
+      % endfor
+  - Edit: defendants_attorney_bar_number
+    button: |
+      **Defendant\'s or Respondent\'s attorney\'s bar number**:
+      ${ defendants_attorney_bar_number }
+  - Edit: motion_title
+    button: |
+      **Motion Title**:
+      ${ motion_title }
+  - Edit: users.revisit
+    button: |
+      **Users**
+
+      % for item in users:
+        * ${ item }
+      % endfor
+  - Edit: hearing_time
+    button: |
+      **Hearing Time**:
+      ${ hearing_time }
+  - Edit: trial_court_bar_number
+    button: |
+      **Judge\'s bar number**:
+      ${ trial_court_bar_number }
+  - Edit: hearing_date
+    button: |
+      **Date of hearing**:
+      ${ hearing_date }
+  - Edit: hearing_at_court
+    button: |
+      **Will the hearing be at the courthouse?**:
+      ${ word(yesno(hearing_at_court)) }
+  - Edit: hearing_address_on_one_line
+    button: |
+      **Address of the hearing**:
+      ${ hearing_address_on_one_line }
+  - Edit: motion_body
+    button: |
+      **Your motion**:
+      > ${ single_paragraph(motion_body) }
+  - Edit: signature_date
+    button: |
+      **Date of signature**:
+      ${ signature_date }
+  - Edit: users.signature_1
+    button: |
+      **users.signature_1**:
+      ${ users.signature_1 }
+  - Edit: service_date
+    button: |
+      **Date of Service**:
+      ${ service_date }
+  - Edit: users.signature_2
+    button: |
+      **users.signature_2**:
+      ${ users.signature_2 }
+---
+continue button field: plaintiffs.revisit
+question: |
+  Edit plaintiffs
+subquestion: |
+  ${ plaintiffs.table }
+
+  ${ plaintiffs.add_action() }
+---
+table: plaintiffs.table
+rows: plaintiffs
+columns:
+  - Name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+edit:
+  - name.first
+confirm: True
+
+---
+continue button field: defendants.revisit
+question: |
+  Edit defendants
+subquestion: |
+  ${ defendants.table }
+
+  ${ defendants.add_action() }
+---
+table: defendants.table
+rows: defendants
+columns:
+  - Name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+edit:
+  - name.first
+confirm: True
+
+---
+continue button field: plaintiffs_attorney.revisit
+question: |
+  Edit plaintiffs_attorney
+subquestion: |
+  ${ plaintiffs_attorney.table }
+
+  ${ plaintiffs_attorney.add_action() }
+---
+table: plaintiffs_attorney.table
+rows: plaintiffs_attorney
+columns:
+  - Name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+  - Address: |
+      row_item.address.block() if defined("row_item.address") else ""
+  - Phone number: |
+      row_item.phone_number if defined("row_item.phone_number") else ""
+edit:
+  - name.first
+  - address.address
+  - phone_number
+confirm: True
+
+---
+continue button field: defendants_attorney.revisit
+question: |
+  Edit defendants_attorney
+subquestion: |
+  ${ defendants_attorney.table }
+
+  ${ defendants_attorney.add_action() }
+---
+table: defendants_attorney.table
+rows: defendants_attorney
+columns:
+  - Name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+  - Address: |
+      row_item.address.block() if defined("row_item.address") else ""
+  - Phone number: |
+      row_item.phone_number if defined("row_item.phone_number") else ""
+edit:
+  - name.first
+  - address.address
+  - phone_number
+confirm: True
+
+---
+continue button field: users.revisit
+question: |
+  Edit users
+subquestion: |
+  ${ users.table }
+
+  ${ users.add_action() }
+---
+table: users.table
+rows: users
+columns:
+  - Name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+edit:
+  - name.first
+confirm: True
+
+---
+id: download simpmotion
+event: simpmotion_download
+question: |
+  All done
+subquestion: |
+  Thank you ${users}. Your form is ready to download and deliver.
+  
+  View, download and send your form below. Click the "Edit answers" button to fix any mistakes.
+
+  ${ action_button_html(url_action('review_simpmotion'), label='Edit answers', color='info') }
+  
+  
+  ${ al_user_bundle.download_list_html() }
+  
+
+  ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
+
+progress: 100
+---
+objects:
+  - simpmotion_post_interview_instructions: ALDocument.using(title="Instructions", filename="simpmotion_next_steps.docx", enabled=True, has_addendum=False, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  - simpmotion_attachment: ALDocument.using(title="Motion and Notice of Hearing", filename="simpmotion.pdf", enabled=True, has_addendum=False, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+---
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[simpmotion_post_interview_instructions,simpmotion_attachment], filename="simpmotion.pdf_package.pdf", title="All forms to download for your records", enabled=True)
+  - al_court_bundle: ALDocumentBundle.using(elements=[simpmotion_attachment], filename="simpmotion.pdf_package.pdf", title="All forms to download for your records", enabled=True)
+---
+attachments:
+  - name: simpmotion post interview instructions
+    filename: Post-interview-instructions     
+    variable name: simpmotion_post_interview_instructions[i]        
+    skip undefined: True
+    docx template file: simpmotion_next_steps.docx
+  - name: simpmotion attachment
+    filename: simpmotion.pdf     
+    variable name: simpmotion_attachment[i]        
+    skip undefined: True
+    pdf template file: simpmotion.pdf
+    fields:
+      - "trial_court_circuit": ${ trial_court.circuit }
+      - "trial_court_district": ${ trial_court.district }
+      - "trial_court_county": ${ trial_court.address.county }
+      - "docket_number": ${ docket_number }
+      - "trial_court.address_on_one_line": ${ trial_court.address.on_one_line() }
+      - "trial_court_phone_number": ${ trial_court.phone_number }
+      - "plaintiffs_name": ${ plaintiffs[0] }
+      - "defendants_name": ${ defendants[0] }
+      - "plaintiffs_attorney_bar_number": ${ plaintiffs_attorney_bar_number }
+      - "plaintiffs_attorney_name": ${ plaintiffs_attorney[0] }
+      - "defendants_attorney_name": ${ defendants_attorney[0] }
+      - "defendants_attorney_bar_number": ${ defendants_attorney_bar_number }
+      - "plaintiffs_attorney_address_block": ${ plaintiffs_attorney[0].address.block() }
+      - "defendants_attorney_address_block": ${ defendants_attorney[0].address.block() }
+      - "plaintiffs_attorney_phone_number": ${ plaintiffs_attorney[0].phone_number }
+      - "defendants_attorney_phone_number": ${ defendants_attorney[0].phone_number }
+      - "motion_title": ${ motion_title }
+      - "users_name": ${ users[0] }
+      - "trial_court_name": ${ judge.name }
+      - "hearing_time": ${ hearing_time }
+      - "trial_court_bar_number": ${ trial_court_bar_number }
+      - "hearing_date": ${ hearing_date }
+      - "hearing_at_court_yes": ${ hearing_at_court }
+      - "hearing_at_court_no": ${ not hearing_at_court }
+      - "hearing_address_on_one_line": ${ hearing_address_on_one_line }
+      - "motion_body": ${ motion_body }
+      - "signature_date": ${ signature_date }
+      # It's a signature: test which file version this is; leave empty unless it's the final version)
+      - "users_signature_1": ${ users.signature_1 if i == 'final' else '' }
+      - "service_date": ${ service_date }
+      # It's a signature: test which file version this is; leave empty unless it's the final version)
+      - "users_signature_2": ${ users.signature_2 if i == 'final' else '' }
