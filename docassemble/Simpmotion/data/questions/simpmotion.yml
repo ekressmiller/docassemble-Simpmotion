@@ -123,7 +123,8 @@ code: |
   motion_body
   hearing_time
   hearing_at_court
-  hearing_address_on_one_line
+  if hearing_at_court == False:
+    hearing_address_on_one_line
   set_progress(66)
   users.gather()
   set_parts(subtitle=str(users))
@@ -139,7 +140,8 @@ comment: |
   Delete mandatory: True to include in another interview
 mandatory: True
 code: |
-  al_intro_screen
+  # the below has some good ideas in it, but taking out for now and just stealing the ideas
+  # al_intro_screen
   # simpmotion_intro
   interview_order_simpmotion
   signature_date
@@ -166,16 +168,32 @@ id: Welcome
 question: |
   Welcome
 subquestion: |
-  Welcome to Michigan Legal Help's Do-It-Yourself Notice of Hearing and Motion. This tool will help you prepare a Notice of Hearing and Motion. Use this tool if you already have a court case and you need to ask the judge to do something in that case. 
+  Welcome to Michigan Legal Help's Do-It-Yourself Notice of Hearing and Motion. This tool will help you prepare a Notice of Hearing and Motion. 
+  
+  Use this tool if you already have a court case and you need to ask the judge to do something in that case. 
   
   This tool does not cover all situations. If you find this tool is not right for you, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to search for a lawyer or legal services in your area.
+  
+  Tap the {green words} in any screen for a definition or more information.
+terms:
+  green words: |
+    Green words are legal terms or a short way of referring to something that needs more explanation. The definition or explanation pops up when you tap the green words.
 continue button field: welcome
 ---
 id: Using this Tool
 question: |
   Using this Tool
 subquestion: |
-  Your personalized Notice of Hearing and Motion along with a checklist of step-by-step instructions will be ready after you have answered all the questions. It should take you between 15 and 30 minutes to answer all the questions.
+  This tool can help you prepare a Notice of Hearing and Motion form in 3 steps:
+  
+  **Step 1.** Answer questions that will fill in your form for you.  It should take you between 15 and 30 minutes to answer all the questions.
+  
+  **Step 2.** Preview the completed form.
+  
+  **Step 3.** Download and save the final form. Your personalized Notice of Hearing and Motion along with a checklist of step-by-step instructions will be ready after you have answered all the questions. 
+  
+  **You will need to file the finished form in court on your own.** We will provide directions when you are finished with the form.
+  
 continue button field: using_this_tool
 ---
 id: Navigation and Saving Your Form
@@ -289,6 +307,39 @@ subquestion: |
   
   You may want to speak to a lawyer. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to find a lawyer or legal services office in your area if you want more help.
 continue button field: speak_to_lawyer
+---
+id: what is the user s role?
+comment: |
+  This question is asked if the interview can be used by both
+  a Plaintiff and a Defendant. It sets the value of `user_role`,
+  `plaintiffs`, `defendants`, `petitioners` and `respondents`.
+  
+  If you know your interview is exclusively
+  used by the Plaintiff or Defendant, set `user_role = 'plaintiff'` or 
+  `user_role='defendant'` in your code.
+question: |
+  Did you start this case, or are you responding to a case
+  that someone else started?
+subquestion: |
+  ${ collapse_template(help_user_ask_role_template) }
+fields: 
+  - no label: user_ask_role
+    datatype: radio
+    choices:
+      - I started this case: plaintiff
+      - Someone else started this case: defendant
+  - note: |
+      Okay, you are the **Plaintiff** or **Petitioner** in this case. The other 
+      side is the Defendant or Respondent.
+    show if:
+      variable: user_ask_role
+      is: "plaintiff"
+  - note: |
+      Okay, you are the **Defendant** or **Respondent** in this case. The other 
+      side is the Plaintiff or Petitioner.
+    show if:
+      variable: user_ask_role
+      is: "defendant"
 ---
 id: Trial Court County
 question: |
