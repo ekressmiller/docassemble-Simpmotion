@@ -65,6 +65,11 @@ objects:
   - trial_court: Organization
   - judge: ALPeopleList.using(ask_number=True,target_number=1)
 ---
+ # assumes there is a plaintiff/petitioner if user is defendant/respondent
+code: |
+  if users == defendants or users == respondents:
+    other_parties.there_are_any = True
+---
 sections:
   - review_simpmotion: Review your answers
 ---
@@ -95,17 +100,16 @@ code: |
   speak_to_lawyer
   # Below sets the user_role by asking a question.
   # You can set user_role directly instead to either 'plaintiff' or 'defendant'
-  user_ask_role
+  docket_number
   trial_court
   # Bryce added below as placeholder to be replaced by something for Michigan courts later?
   trial_court.name.text = "Trial Court"
   trial_court.address.county
   court_type
-  docket_number
   set_progress(22)
   trial_court.phone_number
-  judge.name
-  trial_court_bar_number
+  user_ask_role
+  user_role
   set_progress(33)
   plaintiffs.gather()
   plaintiffs_attorney.gather()
@@ -121,17 +125,24 @@ code: |
   set_progress(55)
   motion_title
   motion_body
-  hearing_time
-  hearing_at_court
-  if hearing_at_court == False:
-    hearing_address_on_one_line
+  has_hearing_info
+  if has_hearing_info == True:
+    hearing_time
+    hearing_at_court
+    if hearing_at_court == False:
+      hearing_address_on_one_line
+    judge.name
+    trial_court_bar_number
+  if has_hearing_info == False:
+    no_hearing_info_ok
   set_progress(66)
   users.gather()
   set_parts(subtitle=str(users))
   signature_date
-  service_date
   users.signature_1
-  users.signature_2
+  # Below taken out because we want them to fill in service date afterwards
+  # service_date
+  # users.signature_2
   interview_order_simpmotion = True
 ---
 ###################### Main order ######################
@@ -168,7 +179,7 @@ id: Welcome
 question: |
   Welcome
 subquestion: |
-  Welcome to Michigan Legal Help's Do-It-Yourself Notice of Hearing and Motion. This tool will help you prepare a Notice of Hearing and Motion. 
+  **Welcome to Michigan Legal Help's Do-It-Yourself Notice of Hearing and Motion.** This tool will help you prepare a Notice of Hearing and Motion. 
   
   Use this tool if you already have a court case and you need to ask the judge to do something in that case. 
   
@@ -259,9 +270,9 @@ question: |
 subquestion: |
   This tool will help you prepare a general motion if there is not a more specific form to use. There are some types of motions that have specific requirements. 
   
-  Michigan Legal Help has some tools to help you draft more specific motions. The more specific tools will help you make sure that you do the best job you can of meeting the requirements of that kind of motion. If there is a specific tool, you should use that tool instead of this one. Review the tools at the link below carefully to find out if there is a specific motion tool you should use:
+  Michigan Legal Help has some tools to help you draft more specific motions. **The more specific tools will help you make sure that you do the best job you can of meeting the requirements of that kind of motion. If there is a specific tool, you should use that tool instead of this one.** Check the tools at the link below carefully to find out if there is a specific motion tool you should use:
   
-  Follow this [link to a list of all the tools on Michigan Legal Help](https://michiganlegalhelp.org/all-forms).
+  **Follow this [link to a list of all the tools on Michigan Legal Help](https://michiganlegalhelp.org/all-forms).**
   
   Do any of the tools on that page fit what you are trying to do?
 noyes: right_tool
@@ -310,24 +321,47 @@ continue button field: speak_to_lawyer
 ---
 id: what is the user s role?
 comment: |
-  This question is asked if the interview can be used by both
-  a Plaintiff and a Defendant. It sets the value of `user_role`,
-  `plaintiffs`, `defendants`, `petitioners` and `respondents`.
-  
-  If you know your interview is exclusively
-  used by the Plaintiff or Defendant, set `user_role = 'plaintiff'` or 
-  `user_role='defendant'` in your code.
+  This question is asked if the interview can be used by both a Plaintiff and a Defendant. It sets the value of `user_role`, `plaintiffs`, `defendants`, `petitioners` and `respondents`.  If you know your interview is exclusively used by the Plaintiff or Defendant, set `user_role = 'plaintiff'` or `user_role='defendant'` in your code.
 question: |
-  Did you start this case, or are you responding to a case
-  that someone else started?
+  Did you start this case, or are you responding to a case that someone else started?
 subquestion: |
+  For **this** Notice of Hearing and Motion form you are called the “moving party” because you are filing the motion.  
+  
+  For your whole case, you are either the Plaintiff, the Defendant, the Petitioner, or the Respondent. You can find this information on your court papers such as the summons, complaint, petition, or answer. 
+  
+  What party are you in your case?
   ${ collapse_template(help_user_ask_role_template) }
+# abortive attempt to get more specific on user role below, leaving for now
+# field: user_role
+# dropdown:
+#   - Plaintiff
+#   - Petitioner
+#   # - Defendant
+#   - Respondent
+# ---
+# code: |
+#   if user_role == 'Plaintiff':
+#     plaintiffs = users
+#     defendants = other_parties
+#     user_started_case = True
+#   elif user_role == 'Petitioner':
+#     petitioners = users
+#     respondents = other_parties
+#     user_started_case = True
+#   elif user_role == 'Defendant':
+#     defendants = users
+#     plaintiffs = other_parties
+#     user_started_case = False
+#   elif user_role == 'Respondent':
+#     respondents = users
+#     petitioners = other_parties
+#     user_started_case = False
 fields: 
   - no label: user_ask_role
     datatype: radio
     choices:
-      - I started this case: plaintiff
-      - Someone else started this case: defendant
+      - I am the Plaintiff or Petitioner: plaintiff
+      - I am the Defendant or Respondent: defendant
   - note: |
       Okay, you are the **Plaintiff** or **Petitioner** in this case. The other 
       side is the Defendant or Respondent.
@@ -341,12 +375,17 @@ fields:
       variable: user_ask_role
       is: "defendant"
 ---
-id: Trial Court County
+id: docket number
 question: |
-  What county is the trial court in?
+  What is your case number?
+subquestion: |
+  Enter the full case number including the two-letter case-type code. You can find the case number at the top of other documents from your case such as the summons, complaint, petition, or answer.
 fields:
-  - "Trial court county": trial_court.address.county
-    maxlength: 25
+  #  removed option to not give case number
+  # - I don't know the docket number: dont_know_docket_number
+  #   datatype: yesno    
+  - no label: docket_number
+  #  hide if: dont_know_docket_number
 ---
 id: Choose a court
 question: |
@@ -359,9 +398,11 @@ question: |
   % endif
 subquestion: |
   % if not al_form_type == 'starts_case':
-  Look at your court paperwork. Match the information listed there. You may need to contact the court or check its website for the address.
+  You can find the case number, county and court by looking at the top of court papers from your case such as the summons, complaint, petition, or answer in your case.  You may need to contact the court or check its website for the address.  
   % endif
 fields:
+  - "Trial court county": trial_court.address.county
+    maxlength: 25
   - Type of court: court_type
     input type: radio
     choices:
@@ -371,23 +412,23 @@ fields:
     show if: 
       variable: court_type
       is: court_is_circuit
-    maxlength: 4
+    maxlength: 3
   - "District Court Number": trial_court.district
     show if: 
       variable: court_type
       is: court_is_district
-    maxlength: 4  
+    maxlength: 3  
   - Address: trial_court_address.address
     address autocomplete: True
-    required: False
+    required: True
   - Suite: trial_court_address.unit
     required: False
   - City: trial_court_address.city
-    required: False
+    required: True
   - State: trial_court_address.state
-    required: False
+    required: True
   - Postal code: trial_court_address.zip    
-    required: False
+    required: True
 ---
 id: What is the trial court s phone number
 question: |
@@ -396,12 +437,27 @@ fields:
   - "Trial court's phone number": trial_court.phone_number
     maxlength: 14
 ---
-id: What is the judge s bar number
+id: Judge information
 question: |
-  What is the judge's bar number?
+  What judge will hear your motion?
+subquestion: |
+  What is the name and bar number (or "P-Number") of the judge who will hear this motion?
 fields:
+  - "Judge's name": judge.name
+    maxlength: 40
   - "Judge's bar number": trial_court_bar_number
     maxlength: 9
+action buttons:
+  - label: I do not know
+    action: no_hearing_info
+    color: danger
+    # placement: 
+---
+event: no_hearing_info
+code: |
+  has_hearing_info = False
+  # below strips the values for the hearing info variables, if they were entered
+  undefine('judge.name', 'trial_court_bar_number', 'hearing_time', 'hearing_date', 'hearing_address_on_one_line')
 ---
 id: Plaintiff or Petitioner s Attorney Information
 question: |
@@ -452,6 +508,21 @@ fields:
     input type: area
     maxlength: 1209
 ---
+id: Do you know hearing time and place
+question: |
+  Motion Hearing Information
+subquestion: |
+  Have you already contacted the court to find out:
+  
+  * when the hearing will be
+  * where the hearing will be, and
+  * what judge will run the hearing?
+under: |  
+ **For most people, the answer will be no.**  
+ 
+ Most people will get the judge and hearing information **after** they file this motion with the court.  We will give you more instructions when you finish this tool.
+yesno: has_hearing_info
+---
 id: When will the hearing be
 question: |
   When will the hearing be?
@@ -460,18 +531,21 @@ fields:
     maxlength: 13
   - "Date of hearing": hearing_date
     datatype: date
+action buttons:
+  - label: I do not know
+    action: no_hearing_info
+    color: danger
+    # placement: 
 ---
 id: Will the hearing be held at the courthouse
 question: |
-  Will the hearing be held at the courthouse?
+  Will the hearing be held in person at the courthouse?
 yesno: hearing_at_court
----
-id: Judge name
-question: |
-  What is the judge's name?
-fields:
-  - "Judge's name": judge.name
-    maxlength: 40
+action buttons:
+  - label: I do not know
+    action: no_hearing_info
+    color: danger
+    # placement: 
 ---
 id: What is the address for the hearing
 question: |
@@ -479,6 +553,18 @@ question: |
 fields:
   - "Address of the hearing": hearing_address_on_one_line
     maxlength: 66
+action buttons:
+  - label: I do not know
+    action: no_hearing_info
+    color: danger
+    # placement: 
+---
+id: OK Not to Have Hearing Info
+continue button field: no_hearing_info_ok
+question: |
+  That's fine.
+subquestion: |
+  You don't need the hearing information yet.  You can fill out the hearing information after you file your motion with the court.  We will give you instructions.
 ---
 id: When will you serve the other party or parties
 question: |
