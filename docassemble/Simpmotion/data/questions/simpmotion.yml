@@ -59,9 +59,11 @@ code: |
   al_form_type = "existing_case" 
 ---
 objects:
-  - users: ALPeopleList.using(ask_number=True,target_number=1)
-  - defendants_attorney: ALPeopleList.using(there_are_any=True)
-  - plaintiffs_attorney: ALPeopleList.using(there_are_any=True)
+  #default way to gather is by asking are there any, and then is there another, so if don't say anything it just does that.  Adding ".using(ask_number=True)" makes it ask for number instead.  Must then set target number somewhere.  
+  # https://suffolklitlab.org/legal-tech-class/docs/repeated-information
+  - users: ALPeopleList
+  - defendants_attorney: ALPeopleList.using(ask_number=True)
+  - plaintiffs_attorney: ALPeopleList.using(ask_number=True)
   - trial_court: Organization
   - judge: ALPeopleList.using(ask_number=True,target_number=1)
 ---
@@ -69,6 +71,13 @@ objects:
 code: |
   if users == defendants or users == respondents:
     other_parties.there_are_any = True
+---
+ # assumes the user has no attorney
+code: |
+  if users == defendants or users == respondents:
+    defendants_attorney.target_number = 0
+  elif users == plaintiffs or users == petitioners:
+    plaintiffs_attorney.target_number = 0
 ---
 sections:
   - review_simpmotion: Review your answers
@@ -98,8 +107,6 @@ code: |
   if approved_form == False:
     approved_form_agree
   speak_to_lawyer
-  # Below sets the user_role by asking a question.
-  # You can set user_role directly instead to either 'plaintiff' or 'defendant'
   docket_number
   trial_court
   # Bryce added below as placeholder to be replaced by something for Michigan courts later?
@@ -108,20 +115,27 @@ code: |
   court_type
   set_progress(22)
   trial_court.phone_number
+  # Below sets the user_role by asking a question.
+  # You can set user_role directly instead to either 'plaintiff' or 'defendant'
   user_ask_role
-  user_role
+  # user_role
   set_progress(33)
   plaintiffs.gather()
-  plaintiffs_attorney.gather()
-  plaintiffs_attorney[0].phone_number
-  plaintiffs_attorney[0].address.address
-  plaintiffs_attorney_bar_number
-  set_progress(44)
   defendants.gather()
-  defendants_attorney.gather()
-  defendants_attorney[0].phone_number
-  defendants_attorney[0].address.address
-  defendants_attorney_bar_number
+  plaintiffs_attorney.target_number
+  if plaintiffs_attorney.target_number > 0 and plaintiffs_attorney.target_number < 2:
+    plaintiffs_attorney.gather()
+    plaintiffs_attorney[0].phone_number
+    plaintiffs_attorney[0].address.address
+    plaintiffs_attorney_bar_number
+  set_progress(44)
+  if other_parties.there_are_any == True:
+    defendants_attorney.target_number
+    if defendants_attorney.target_number > 0 and defendants_attorney.target_number < 2:
+      defendants_attorney.gather()
+      defendants_attorney[0].phone_number
+      defendants_attorney[0].address.address
+      defendants_attorney_bar_number  
   set_progress(55)
   motion_title
   motion_body
@@ -374,6 +388,148 @@ fields:
     show if:
       variable: user_ask_role
       is: "defendant"
+---
+id: any other opposing parties
+question: |
+  % if users==plaintiffs:
+  Is there any other defendant or respondent in this case?
+  % else:
+  Is there any other plaintiff or petitioner in this case?
+  % endif
+fields:
+  - no label: other_parties.there_is_another
+    datatype: yesnoradio
+---
+sets:
+  - other_parties[i].name.first
+  - other_parties[i].name.last
+  - other_parties[i].name.middle
+  - other_parties[i].name.suffix
+id: names of opposing parties
+question: |
+  % if users==plaintiffs:
+  Name of ${ ordinal(i) } defendant or respondent
+  % else:
+  Name of ${ ordinal(i) } plaintiff or petitioner
+  % endif
+fields:
+  - code: |
+      other_parties[i].name_fields(person_or_business='unsure')
+---
+id: any other users
+question: |
+  % if al_form_type in ['starts_case','existing_case','appeal']:
+  % if users==plaintiffs:
+  Is there any other plaintiff or petitioner in this case?
+  % else:
+  Is there any other defendant or respondent in this case?
+  % endif  
+  % else:
+  Is anyone else adding their name to this form with you?
+  % endif
+subquestion: |
+  % if len(users.elements) > 1:  
+  So far you have told us about ${comma_and_list(users.complete_elements())}.
+  % endif
+fields:
+  - no label: users.there_is_another
+    datatype: yesnoradio
+---
+sets:
+  - users[i].name.first
+  - users[i].name.last
+  - users[i].name.middle
+  - users[i].name.suffix    
+id: other users names
+question: |
+  % if al_form_type in ['starts_case','existing_case','appeal']:
+  % if users==plaintiffs:
+  Who is the ${ ordinal(i) } plaintiff or petitioner?
+  % else:
+  Who is the ${ ordinal(i) } defendant or respondent?
+  % endif  
+  % else:
+  What is the name of the ${ ordinal_number(i) } person who is adding their name to
+  this form with you?
+  % endif
+fields:
+  - code: |
+      users[i].name_fields()
+---
+ #saved copy of how was doing this before--useful if don't need to limit number of attorneys and want to use default gather method
+# id: other party has attorney
+ # question: |
+ #   % if users==plaintiffs:
+ #   % if len(other_parties.elements) > 1:  
+ #   Do the defendants or respondents have a lawyer?
+ #   % else:
+ #   Does the defendant or respondent have a lawyer?
+ #   % endif
+ #   % else: 
+ #   % if len(other_parties.elements) > 1:  
+ #   Do the plaintiffs or petitioners have a lawyer?
+ #   % else:
+ #   Does the plaintiff or petitioner have a lawyer?
+ #   % endif
+ #   % endif
+ # fields:
+ #   - no label: defendants_attorney.there_are_any
+ #     datatype: yesnoradio
+ #     show if: 
+ #       code: |  
+ #         users == plaintiffs
+ #   - no label: plaintiffs_attorney.there_are_any
+ #     datatype: yesnoradio
+ #     show if: 
+ #       code: |  
+ #         users == defendants
+ # ---
+id: other party has attorney
+question: |
+  % if users==plaintiffs:
+  % if len(other_parties.elements) > 1:  
+  Do any of the defendants or respondents have a lawyer?
+  % else:
+  Does the defendant or respondent have a lawyer?
+  % endif
+  % else: 
+  % if len(other_parties.elements) > 1:  
+  Do any of the plaintiffs or petitioners have a lawyer?
+  % else:
+  Does the plaintiff or petitioner have a lawyer?
+  % endif
+  % endif
+fields:
+  - no label: defendants_attorney.target_number
+    input type: radio
+    datatype: integer
+    choices:
+      - No, they don't have a lawyer.: 0
+      - Yes, they have 1 lawyer.: 1
+      - Yes, they have multiple lawyers.: 2
+    show if: 
+      code: |  
+        users == plaintiffs
+  - no label: plaintiffs_attorney.target_number
+    input type: radio
+    datatype: integer
+    choices:
+      - No, they don't have a lawyer.: 0
+      - Yes, they have 1 lawyer.: 1
+      - Yes, they have multiple lawyers.: 2
+    show if: 
+      code: |  
+        users == defendants
+  - note: |
+      NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to input more than one lawyer, you will need to write them in neatly yourself.  
+    show if:
+      variable: plaintiffs_attorney.target_number
+      is: 2
+  - note: |
+      NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to input more than one lawyer, you will need to write them in neatly yourself.  
+    show if:
+      variable: defendants_attorney.target_number
+      is: 2
 ---
 id: docket number
 question: |
