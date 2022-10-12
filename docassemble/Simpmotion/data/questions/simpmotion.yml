@@ -61,7 +61,8 @@ code: |
 objects:
   #default way to gather is by asking are there any, and then is there another, so if don't say anything it just does that.  Adding ".using(ask_number=True)" makes it ask for number instead.  Must then set target number somewhere.  
   # https://suffolklitlab.org/legal-tech-class/docs/repeated-information
-  - users: ALPeopleList
+  - users: ALPeopleList.using(ask_number=True,target_number=1)
+  - other_parties: ALPeopleList.using(ask_number=True)
   - defendants_attorney: ALPeopleList.using(ask_number=True)
   - plaintiffs_attorney: ALPeopleList.using(ask_number=True)
   - trial_court: Organization
@@ -120,8 +121,15 @@ code: |
   user_ask_role
   # user_role
   set_progress(33)
-  plaintiffs.gather()
-  defendants.gather()
+  multiple_users
+  if multiple_users==True:
+    multiple_users_warning
+  multiple_other_parties
+  if multiple_other_parties==True:
+    multiple_other_parties_warning
+  users.gather()
+  if other_parties.target_number == 1:
+    other_parties.gather()
   plaintiffs_attorney.target_number
   if plaintiffs_attorney.target_number > 0 and plaintiffs_attorney.target_number < 2:
     plaintiffs_attorney.gather()
@@ -380,7 +388,7 @@ fields:
       Okay, you are the **Plaintiff** or **Petitioner** in this case. The other 
       side is the Defendant or Respondent.
     show if:
-      variable: user_ask_role
+      variable: user_as # k_role
       is: "plaintiff"
   - note: |
       Okay, you are the **Defendant** or **Respondent** in this case. The other 
@@ -388,17 +396,18 @@ fields:
     show if:
       variable: user_ask_role
       is: "defendant"
----
-id: any other opposing parties
-question: |
-  % if users==plaintiffs:
-  Is there any other defendant or respondent in this case?
-  % else:
-  Is there any other plaintiff or petitioner in this case?
-  % endif
-fields:
-  - no label: other_parties.there_is_another
-    datatype: yesnoradio
+ # commented out because using different gather method
+ # ---
+ # id: any other opposing parties
+ # question: |
+ #   % if users==plaintiffs:
+ #   Is there any other defendant or respondent in this case?
+ #   % else:
+ #   Is there any other plaintiff or petitioner in this case?
+ #   % endif
+ # fields:
+ #   - no label: other_parties.there_is_another
+ #     datatype: yesnoradio
 ---
 sets:
   - other_parties[i].name.first
@@ -408,33 +417,34 @@ sets:
 id: names of opposing parties
 question: |
   % if users==plaintiffs:
-  Name of ${ ordinal(i) } defendant or respondent
+  Name of defendant or respondent
   % else:
-  Name of ${ ordinal(i) } plaintiff or petitioner
+  Name of plaintiff or petitioner
   % endif
 fields:
   - code: |
       other_parties[i].name_fields(person_or_business='unsure')
 ---
-id: any other users
-question: |
-  % if al_form_type in ['starts_case','existing_case','appeal']:
-  % if users==plaintiffs:
-  Is there any other plaintiff or petitioner in this case?
-  % else:
-  Is there any other defendant or respondent in this case?
-  % endif  
-  % else:
-  Is anyone else adding their name to this form with you?
-  % endif
-subquestion: |
-  % if len(users.elements) > 1:  
-  So far you have told us about ${comma_and_list(users.complete_elements())}.
-  % endif
-fields:
-  - no label: users.there_is_another
-    datatype: yesnoradio
----
+ # commented out because using different gather method now
+ # id: any other users
+ # question: |
+ #   % if al_form_type in ['starts_case','existing_case','appeal']:
+ #   % if users==plaintiffs:
+ #   Is there any other plaintiff or petitioner in this case?
+ #   % else:
+ #   Is there any other defendant or respondent in this case?
+ #   % endif  
+ #   % else:
+ #   Is anyone else adding their name to this form with you?
+ #   % endif
+ # subquestion: |
+ #   % if len(users.elements) > 1:  
+ #   So far you have told us about ${comma_and_list(users.complete_elements())}.
+ #   % endif
+ # fields:
+ #   - no label: users.there_is_another
+ #     datatype: yesnoradio
+ # ---
 sets:
   - users[i].name.first
   - users[i].name.last
@@ -487,13 +497,13 @@ fields:
 id: other party has attorney
 question: |
   % if users==plaintiffs:
-  % if len(other_parties.elements) > 1:  
+  % if multiple_other_parties==True:  
   Do any of the defendants or respondents have a lawyer?
   % else:
   Does the defendant or respondent have a lawyer?
   % endif
   % else: 
-  % if len(other_parties.elements) > 1:  
+  % if multiple_other_parties==True:  
   Do any of the plaintiffs or petitioners have a lawyer?
   % else:
   Does the plaintiff or petitioner have a lawyer?
@@ -614,6 +624,75 @@ code: |
   has_hearing_info = False
   # below strips the values for the hearing info variables, if they were entered
   undefine('judge.name', 'trial_court_bar_number', 'hearing_time', 'hearing_date', 'hearing_address_on_one_line')
+---
+id: multiple users
+question: |
+  % if user_ask_role=='plaintiff':
+  Are there any other plaintiffs or petitioners in the case with you?
+  % else: 
+  Are there any other defendants or respondents in the case with you?
+  % endif
+yesno: multiple_users 
+---
+id: multiple other parties
+question: |
+  % if user_ask_role=='plaintiff':
+  How many defendants or respondents are there in this case?
+  % else: 
+  How many plaintiffs or petitioners are there in this case?
+  % endif
+subquestion: |
+  These are the parties on the "other side" of the case from you.
+buttons:
+  - None:
+      code: |
+        other_parties.target_number = 0
+        other_parties.there_are_any = False
+        multiple_other_parties = False
+  - One:
+      code: |
+        other_parties.target_number = 1
+        other_parties.there_are_any = True
+        multiple_other_parties = False
+  - More than one:
+      code: |
+        other_parties.target_number = 0
+        other_parties.there_are_any = True
+        multiple_other_parties = True
+---
+id: multiple users warning
+continue button field: multiple_users_warning
+question: |
+  This tool can only print one party on the form for each side of the case.  You will need to neatly write in the names of the parties on your side of the case yourself.  We will give you instructions when you complete this tool.
+subquestion: |
+  More info here.  
+---
+id: multiple other parties warning
+continue button field: multiple_other_parties_warning
+question: |
+  This tool can only print one party on the form for each side of the case.  You will need to neatly write in the names of the parties on the other side of the case yourself.  We will give you instructions when you complete this tool.
+subquestion: |
+  More info here.  
+---
+id: more than one other party
+question: |
+  % if users==plaintiffs:
+  How many defendants or respondents are there in this case?
+  % else: 
+  How many plaintiffs or petitioners are there in this case?
+  % endif
+fields:
+  - no label: other_parties.target_number
+    input type: radio
+    datatype: integer
+    choices:
+      - There is only one.: 1
+      - There are more than one.: 2
+  - note: |
+      NOTE: This tool **cannot** put multiple parties on the form.  If you want to input more than one lawyer, you will need to write them in neatly yourself.  
+    show if:
+      variable: other_parties.target_number
+      is: 2
 ---
 id: Plaintiff or Petitioner s Attorney Information
 question: |
