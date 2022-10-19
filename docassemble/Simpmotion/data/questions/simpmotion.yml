@@ -124,10 +124,21 @@ code: |
   multiple_users
   if multiple_users==True:
     multiple_users_warning
-  multiple_other_parties
+  users.gather()
+  # this interview already tells us to assume user has no attorney, so presuming that here too
+  if user_ask_role == 'plaintiff':
+    if multiple_users == False:
+      plaintiffs[0].address.address
+  else:
+    if multiple_users == False:
+      defendants[0].address.address
+  # presents correct version of multiple_other_parties screen depending on user role
+  if user_ask_role=='plaintiff':
+    user_is_plaintiff_logic
+  else:
+    user_is_defendant_logic
   if multiple_other_parties==True:
     multiple_other_parties_warning
-  users.gather()
   if other_parties.target_number == 1:
     other_parties.gather()
   plaintiffs_attorney.target_number
@@ -144,6 +155,12 @@ code: |
       defendants_attorney[0].phone_number
       defendants_attorney[0].address.address
       defendants_attorney_bar_number  
+  if user_ask_role == 'plaintiff':
+    if multiple_other_parties == False and defendants_attorney.target_number == 0:
+      defendants[0].address.address
+  else:
+    if multiple_other_parties == False and plaintiffs_attorney.target_number == 0:
+      plaintiffs[0].address.address
   set_progress(55)
   motion_title
   motion_body
@@ -584,16 +601,16 @@ fields:
       variable: court_type
       is: court_is_district
     maxlength: 3  
-  - Address: trial_court_address.address
+  - Address: trial_court.address.address
     address autocomplete: True
     required: True
-  - Suite: trial_court_address.unit
+  - Suite: trial_court.address.unit
     required: False
-  - City: trial_court_address.city
+  - City: trial_court.address.city
     required: True
-  - State: trial_court_address.state
+  - State: trial_court.address.state
     required: True
-  - Postal code: trial_court_address.zip    
+  - Postal code: trial_court.address.zip    
     required: True
 ---
 id: What is the trial court s phone number
@@ -634,13 +651,9 @@ question: |
   % endif
 yesno: multiple_users 
 ---
-id: multiple other parties
+id: multiple other parties when user plaintiff
 question: |
-  % if user_ask_role=='plaintiff':
   How many defendants or respondents are there in this case?
-  % else: 
-  How many plaintiffs or petitioners are there in this case?
-  % endif
 subquestion: |
   These are the parties on the "other side" of the case from you.
 buttons:
@@ -649,30 +662,62 @@ buttons:
         other_parties.target_number = 0
         other_parties.there_are_any = False
         multiple_other_parties = False
+        user_is_plaintiff_logic = True
   - One:
       code: |
         other_parties.target_number = 1
         other_parties.there_are_any = True
         multiple_other_parties = False
+        user_is_plaintiff_logic = True
   - More than one:
       code: |
         other_parties.target_number = 0
         other_parties.there_are_any = True
         multiple_other_parties = True
+        user_is_plaintiff_logic = True
+---
+id: multiple other parties when user defendant
+question: |
+  How many plaintiffs or petitioners are there in this case?
+subquestion: |
+  These are the parties on the "other side" of the case from you.
+buttons:
+  - One:
+      code: |
+        other_parties.target_number = 1
+        other_parties.there_are_any = True
+        multiple_other_parties = False
+        user_is_defendant_logic = True
+  - More than one:
+      code: |
+        other_parties.target_number = 0
+        other_parties.there_are_any = True
+        multiple_other_parties = True
+        user_is_defendant_logic = True
 ---
 id: multiple users warning
 continue button field: multiple_users_warning
 question: |
-  This tool can only print one party on the form for each side of the case.  You will need to neatly write in the names of the parties on your side of the case yourself.  We will give you instructions when you complete this tool.
+  % if user_ask_role=='plaintiff':
+  You will need to write in the plaintiffs' or petitioners' names yourself.
+  % else: 
+  You will need to write in the defendants' or respondents' names yourself.
+  % endif
 subquestion: |
-  More info here.  
+  This tool can only print one party on the form for each side of the case.  You will need to neatly write in the names of the parties on your side of the case yourself.  We will give you instructions when you complete this tool.  
+
+  We will still ask for your name because it also goes on another part of the form.
 ---
 id: multiple other parties warning
 continue button field: multiple_other_parties_warning
 question: |
-  This tool can only print one party on the form for each side of the case.  You will need to neatly write in the names of the parties on the other side of the case yourself.  We will give you instructions when you complete this tool.
+  % if user_ask_role=='plaintiff':
+  You will need to write in the defendants' or respondents' names yourself.
+  % else: 
+  You will need to write in the plaintiffs' or petitioners' names yourself.
+  % endif
 subquestion: |
-  More info here.  
+  This tool can only print one party on the form for each side of the case.  You will need to neatly write in the names of the parties on the other side of the case yourself.  We will give you instructions when you complete this tool. 
 ---
 id: more than one other party
 question: |
@@ -1110,7 +1155,7 @@ attachments:
       - "trial_court_district": ${ trial_court.district }
       - "trial_court_county": ${ trial_court.address.county }
       - "docket_number": ${ docket_number }
-      - "trial_court.address_on_one_line": ${ trial_court.address.on_one_line() }
+      - "trial_court_address_on_one_line": ${ trial_court.address.on_one_line() }
       - "trial_court_phone_number": ${ trial_court.phone_number }
       - "plaintiffs_name": ${ plaintiffs[0] }
       - "defendants_name": ${ defendants[0] }
