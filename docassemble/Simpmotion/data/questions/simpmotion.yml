@@ -96,17 +96,20 @@ code: |
   navigation_and_saving
   pii_policy
   if pii_policy == False:
-    pii_policy_agree
+    pii_policy_exit
   existing_case
   if existing_case == False:
-    existing_case_agree
+    existing_case_exit
   set_progress(11)
+  probate_case
+  if probate_case == True:
+    probate_case_exit
   right_tool
   if right_tool == False:
-    right_tool_agree
+    right_tool_exit
   approved_form
-  if approved_form == False:
-    approved_form_agree
+  if approved_form == True:
+    approved_form_exit
   speak_to_lawyer
   docket_number
   trial_court
@@ -272,7 +275,7 @@ subquestion: |
   Do you understand that you should only enter personal identifying information if this tool specifically asks for it?
 yesno: pii_policy
 ---
-event: pii_policy_agree
+event: pii_policy_exit
 question: |
   You cannot continue to use the tool.
 subquestion: |
@@ -292,7 +295,7 @@ subquestion: |
   Do you have an existing case in a Michigan court?
 yesno: existing_case
 ---
-event: existing_case_agree
+event: existing_case_exit
 question: |
   You cannot continue to use the tool.
 subquestion: |
@@ -303,6 +306,28 @@ buttons:
   - Exit: exit
     url: https://michiganlegalhelp.org
 ---
+id: Is this a probate case
+question: |
+  Are you Filing in a Probate Case?
+subquestion: |
+  Is the case you will be filing in a probate case? Examples of probate cases include cases to distribute property after someone dies, guardianships, and conservatorships. 
+
+  If you are not sure if you have a probate case, look for a court document from the court case. The top of each court document has information about the case. This will often list whether the court is a probate court. You can also check the two-letter case-type code at the end of the case number. To see a full list of the probate case codes visit [the State Court Administrative Office list of case-type codes](https://www.courts.michigan.gov/siteassets/court-administration/standardsguidelines/casefile/cf_casetypecodes.pdf) and scroll down to the “Probate” section.
+
+  **Is your case a probate case?**
+yesno: probate_case
+---
+event: probate_case_exit
+question: |
+  You cannot continue to use the tool.
+subquestion: |
+  Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. Probate cases have different procedural rules than other cases. You may want to speak to a lawyer. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to find a lawyer or legal services office in your area.
+  
+  If you made a mistake, click the **Undo** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+buttons:
+  - Exit: exit
+    url: https://michiganlegalhelp.org
+--- 
 id: Make Sure this Tool is Right for Your Situation
 question: |
   Make Sure this Tool is Right for Your Situation
@@ -316,7 +341,7 @@ subquestion: |
   Do any of the tools on that page fit what you are trying to do?
 noyes: right_tool
 ---
-event: right_tool_agree
+event: right_tool_exit
 question: |
   You cannot continue to use the tool.
 subquestion: |
@@ -334,9 +359,9 @@ subquestion: |
   The State Court Administrative Office (SCAO) has court forms for some kinds of motions. Follow this [link to the list of SCAO-approved forms](https://www.courts.michigan.gov/SCAO-forms/) to find out if they have a form for the kind of request you need in your case. 
   
   Did you find a form that applies to your case?
-noyes: approved_form
+yesno: approved_form
 ---
-event: approved_form_agree
+event: approved_form_exit
 question: |
   You cannot continue to use the tool.
 subquestion: |
@@ -362,11 +387,11 @@ id: what is the user s role?
 comment: |
   This question is asked if the interview can be used by both a Plaintiff and a Defendant. It sets the value of `user_role`, `plaintiffs`, `defendants`, `petitioners` and `respondents`.  If you know your interview is exclusively used by the Plaintiff or Defendant, set `user_role = 'plaintiff'` or `user_role='defendant'` in your code.
 question: |
-  Did you start this case, or are you responding to a case that someone else started?
+  What party are you in your existing case?
 subquestion: |
   For **this** Notice of Hearing and Motion form you are called the “moving party” because you are filing the motion.  
   
-  For your whole case, you are either the Plaintiff, the Defendant, the Petitioner, or the Respondent. You can find this information on your court papers such as the summons, complaint, petition, or answer. 
+  For your whole case, you are either the Plaintiff, the Defendant, the Petitioner, or the Respondent. 
   
   What party are you in your case?
   ${ collapse_template(help_user_ask_role_template) }
@@ -405,7 +430,7 @@ fields:
       Okay, you are the **Plaintiff** or **Petitioner** in this case. The other 
       side is the Defendant or Respondent.
     show if:
-      variable: user_as # k_role
+      variable: user_ask_role
       is: "plaintiff"
   - note: |
       Okay, you are the **Defendant** or **Respondent** in this case. The other 
@@ -426,6 +451,16 @@ fields:
  #   - no label: other_parties.there_is_another
  #     datatype: yesnoradio
 ---
+template: help_user_ask_role_template
+subject: |
+  How do I know?
+content: |
+  You can find the parties by looking at the first page of an existing court document, like a complaint, petition, or answer. The top of the first page is the “caption” which has the basic case information. This area will list all of the parties in the case with their titles.
+
+  If you were the first person to file a form to start this case, you are the "Plaintiff" or the "Petitioner."  If someone else started this case by filing in court, you
+  are the "Defendant" or the "Respondent." 
+
+---
 sets:
   - other_parties[i].name.first
   - other_parties[i].name.last
@@ -441,6 +476,30 @@ question: |
 fields:
   - code: |
       other_parties[i].name_fields(person_or_business='unsure')
+---
+sets:
+  - plaintiffs_attorney[i].name.first
+  - plaintiffs_attorney[i].name.last
+  - plaintiffs_attorney[i].name.middle
+  - plaintiffs_attorney[i].name.suffix
+id: names of plaintiff s attorney
+question: |
+  Name of plaintiff or petitioner lawyer
+fields:
+  - code: |
+      plaintiffs_attorney[i].name_fields()
+---
+sets:
+  - defendants_attorney[i].name.first
+  - defendants_attorney[i].name.last
+  - defendants_attorney[i].name.middle
+  - defendants_attorney[i].name.suffix
+id: names of defendant s attorney
+question: |
+  Name of defendant or respondent lawyer
+fields:
+  - code: |
+      defendants_attorney[i].name_fields()
 ---
  # commented out because using different gather method now
  # id: any other users
@@ -515,17 +574,19 @@ id: other party has attorney
 question: |
   % if users==plaintiffs:
   % if multiple_other_parties==True:  
-  Do any of the defendants or respondents have a lawyer?
+  Do the defendants or respondents have a lawyer?
   % else:
   Does the defendant or respondent have a lawyer?
   % endif
   % else: 
   % if multiple_other_parties==True:  
-  Do any of the plaintiffs or petitioners have a lawyer?
+  Do the plaintiffs or petitioners have a lawyer?
   % else:
   Does the plaintiff or petitioner have a lawyer?
   % endif
   % endif
+subquestion: |
+  This information would be on court documents you have from the case. Look at the most recent document you have to get the most up-to-date information. A party can hire a lawyer at any point in the case.
 fields:
   - no label: defendants_attorney.target_number
     input type: radio
@@ -548,12 +609,12 @@ fields:
       code: |  
         users == defendants
   - note: |
-      NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to input more than one lawyer, you will need to write them in neatly yourself.  
+      NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to include more than one lawyer, you will need to write them in neatly yourself.  
     show if:
       variable: plaintiffs_attorney.target_number
       is: 2
   - note: |
-      NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to input more than one lawyer, you will need to write them in neatly yourself.  
+      NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to include more than one lawyer, you will need to write them in neatly yourself.  
     show if:
       variable: defendants_attorney.target_number
       is: 2
@@ -580,9 +641,7 @@ question: |
   What court is your case in?
   % endif
 subquestion: |
-  % if not al_form_type == 'starts_case':
-  You can find the case number, county and court by looking at the top of court papers from your case such as the summons, complaint, petition, or answer in your case.  You may need to contact the court or check its website for the address.  
-  % endif
+  ${ collapse_template(help_user_choose_court_template) }
 fields:
   - "Trial court county": trial_court.address.county
     maxlength: 25
@@ -595,12 +654,12 @@ fields:
     show if: 
       variable: court_type
       is: court_is_circuit
-    maxlength: 3
+    maxlength: 4
   - "District Court Number": trial_court.district
     show if: 
       variable: court_type
       is: court_is_district
-    maxlength: 3  
+    maxlength: 4  
   - Address: trial_court.address.address
     address autocomplete: True
     required: True
@@ -612,6 +671,12 @@ fields:
     required: True
   - Postal code: trial_court.address.zip    
     required: True
+---
+template: help_user_choose_court_template
+subject: |
+  How do I know?
+content: |
+  You can find the case number, county and court by looking at the top of court papers from your case such as the summons, complaint, petition, or answer in your case. You may need to contact the court or check its website for the address.  
 ---
 id: What is the trial court s phone number
 question: |
@@ -741,17 +806,27 @@ fields:
 ---
 id: Plaintiff or Petitioner s Attorney Information
 question: |
-  Plaintiff or Petitioner's Attorney Information
+  Plaintiff or Petitioner Lawyer's Bar Number
+subquestion: |
+  ${ collapse_template(help_user_find_bar_number_template) }
 fields:
-  - "Plaintiff's or Petitioner's attorney's bar number": plaintiffs_attorney_bar_number
+  - "Plaintiff's or Petitioner lawyer's bar number": plaintiffs_attorney_bar_number
     maxlength: 11
 ---
 id: Defendant or Respondent s Attorney Information
 question: |
-  Defendant or Respondent's Attorney Information
+  Defendant or Respondent Lawyer's Bar Number
+subquestion: |
+  ${ collapse_template(help_user_find_bar_number_template) }
 fields:
-  - "Defendant's or Respondent's attorney's bar number": defendants_attorney_bar_number
+  - "Defendant or Respondent lawyer's bar number": defendants_attorney_bar_number
     maxlength: 8
+---
+template: help_user_find_bar_number_template
+subject: |
+  How can I find a lawyer's bar number?
+content: |
+  The lawyer's bar number is a five digit number after the letter P, usually listed after the lawyer's name. For example: P12345.  
 ---
 id: Motion Title
 question: |
@@ -759,10 +834,8 @@ question: |
 subquestion: |
   Fill in the blank below with the title of your motion. This must be short and fit on one line. It should briefly tell the judge what you are asking for. 
   
-  A motion is a document you use to ask the judge to do something. If you are having trouble deciding what to name the motion, think of the word “Motion” as meaning “I want to ask the judge” For example, if you are getting divorced and want to waive the waiting period you might  say “I want to ask the judge to waive the statutory waiting period.” In that situaiotn the motion title could be “Motion to Waive the Statutory Waiting Period.”
-  
-  Motion [blank line with a character limit of 85, optional field]
-  
+  A motion is a document you use to ask the judge to do something. If you are having trouble deciding what to name the motion, think of the word “Motion” as meaning “I want to ask the judge” For example, if you are getting divorced and want to waive the waiting period you might  say “I want to ask the judge to waive the statutory waiting period.” In that situation the motion title could be “Motion to Waive the Statutory Waiting Period.”
+under: |  
   If you are not sure of the title you can leave this blank and neatly write it by hand before you file it in court.
 fields:
   - "Motion Title": motion_title
@@ -776,17 +849,18 @@ subquestion: |
   A motion is a written request to a judge. A motion must have a written statement that gives the judge reasons why they should do what you are asking. 
   
   Whether or not the judge grants your motion will depend on the facts and the laws that apply in your case. Your motion will be more persuasive if you are very clear about what you are asking for and give good legal support for your request. Here are a few ways to write a good motion:
-  Start and end by directly asking for what you want. For example, you could start by saying: “I request that the court waive the waiting period in my divorce.” After writing the support for your request you could end by saying: “For all of the reasons listed above, I respectfully request that the court waive the waiting period in my divorce.”
-  Be brief. Give good reasons why the judge should do what you are asking but make sure that you stay focused on the specific issues related to the request.
-  Include attachments if they support your arguments. If you have a document or photo that supports a statement you make, you can attach an exhibit. For example, you could write: “My spouse has been physically abusive and I got a Personal Protection Order in 2019. See Exhibit A.” If you reference any exhibits in your motion be sure to label and attach them to your finished forms before filing in court. In the example here you would clearly write “Exhibit A” on a copy of the 2019 protection order and attach it to the motion.
-  Do your best to understand what rules the judge will follow when deciding your motion. For example, if the law says that the judge can grant a motion in your case if you show a change in circumstances, be sure to explain the change in circumstances. If the court rules say you must show good cause, explain the good cause. It is a good idea to use those specific words. For example, if you need to show good cause, say “There is good cause because…”
-  Do not include any personal identifying information. Personal identifying information includes: date of birth, social security or national identification number, driver’s license or state identification number, passport number, and financial account numbers. If a court rule or law requires you to include this information or if the information is necessary for identification purposes you must fill out form MC 97 (if the information is related to a defendant, respondent, or decedent) or form MC 97a (if the information is about a plaintiff, petitioner, or anyone else not included in MC 97). Include the information on MC 97 and do not include it in the Motion. Instead, include a reference in the Motion to ask the judge to see MC 97 for the information.
+  
+  * **Start and end by directly asking for what you want**. For example, you could start by saying: “I request that the court waive the waiting period in my divorce.” After writing the support for your request you could end by saying: “For all of the reasons listed above, I respectfully request that the court waive the waiting period in my divorce.”
+  * **Be brief**. Give good reasons why the judge should do what you are asking but make sure that you stay focused on the specific issues related to the request.
+  * **Include attachments if they support your arguments**. If you have a document or photo that supports a statement you make, you can attach an exhibit. For example, you could write: “My spouse has been physically abusive and I got a Personal Protection Order in 2019. See Exhibit A.” If you reference any exhibits in your motion be sure to label and attach them to your finished forms before filing in court. In the example here you would clearly write “Exhibit A” on a copy of the 2019 protection order and attach it to the motion.
+  * **Do your best to understand what rules the judge will follow when deciding your motion**. For example, if the law says that the judge can grant a motion in your case if you show a change in circumstances, be sure to explain the change in circumstances. If the court rules say you must show good cause, explain the good cause. It is a good idea to use those specific words. For example, if you need to show good cause, say “There is good cause because…”
+  * **Do not include any personal identifying information**. Personal identifying information includes: date of birth, social security or national identification number, driver’s license or state identification number, passport number, and financial account numbers. If a court rule or law requires you to include this information or if the information is necessary for identification purposes you must fill out form [MC 97](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97.pdf) (if the information is related to a defendant, respondent, or decedent) or form [MC 97a](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97a.pdf) (if the information is about a plaintiff, petitioner, or anyone else not included in MC 97). Include the information on MC 97 and do not include it in the Motion. Instead, include a reference in the Motion to ask the judge to see MC 97 for the information.
   
   Use the space below to tell the judge what you want and to give reasons for it. This tool will not automatically save your work. If you will need to spend some time writing you may want to create an account and save your work a few times as you write. If you want to save your answers [insert language about how to save answers here]
 fields:
   - "Your motion": motion_body
     input type: area
-    maxlength: 1209
+    # maxlength: 1209
 ---
 id: Do you know hearing time and place
 question: |
@@ -900,11 +974,11 @@ review:
   - Edit: trial_court.circuit
     button: |
       **Circuit Court Number**:
-      ${ trial_court_circuit }
+      ${ trial_court.circuit }
   - Edit: trial_court.district
     button: |
       **District Court Number**:
-      ${ trial_court_district }
+      ${ trial_court.district }
   - Edit: trial_court
     button: |
       **trial_court**
@@ -1133,11 +1207,20 @@ progress: 100
 ---
 objects:
   - simpmotion_post_interview_instructions: ALDocument.using(title="Instructions", filename="simpmotion_next_steps.docx", enabled=True, has_addendum=False, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
-  - simpmotion_attachment: ALDocument.using(title="Motion and Notice of Hearing", filename="simpmotion.pdf", enabled=True, has_addendum=False, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  - simpmotion_attachment: ALDocument.using(title="Motion and Notice of Hearing", filename="simpmotion.pdf", enabled=True, has_addendum=True, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
 ---
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[simpmotion_post_interview_instructions,simpmotion_attachment], filename="simpmotion.pdf_package.pdf", title="All forms to download for your records", enabled=True)
   - al_court_bundle: ALDocumentBundle.using(elements=[simpmotion_attachment], filename="simpmotion.pdf_package.pdf", title="All forms to download for your records", enabled=True)
+---
+attachment:
+  variable name: simpmotion_attachment.addendum
+  docx template file: simpmotion_addendum_template.docx
+---
+code: |
+  simpmotion_attachment.overflow_fields['motion_body'].overflow_trigger=1209
+  simpmotion_attachment.overflow_fields['motion_body'].label = "Motion (continued)"
+  simpmotion_attachment.overflow_fields.gathered=True
 ---
 attachments:
   - name: simpmotion post interview instructions
@@ -1157,14 +1240,37 @@ attachments:
       - "docket_number": ${ docket_number }
       - "trial_court_address_on_one_line": ${ trial_court.address.on_one_line() }
       - "trial_court_phone_number": ${ trial_court.phone_number }
-      - "plaintiffs_name": ${ plaintiffs[0] }
-      - "defendants_name": ${ defendants[0] }
+      # removes plaintiff from header if there are multiple user plaintiffs, if plaintiff not user,         won't collect plaintiff name anyway
+      - "plaintiffs_name": |
+            % if user_ask_role == 'plaintiff' and multiple_users == True:
+            ${ '' }
+            % else:
+            ${ plaintiffs[0] }
+            % endif
+      # as above for when defendant is user    
+      - "defendants_name": |       
+            % if user_ask_role == 'defendant' and multiple_users == True:
+            ${ '' }
+            % else:
+            ${ defendants[0] }
+            % endif
       - "plaintiffs_attorney_bar_number": ${ plaintiffs_attorney_bar_number }
       - "plaintiffs_attorney_name": ${ plaintiffs_attorney[0] }
       - "defendants_attorney_name": ${ defendants_attorney[0] }
       - "defendants_attorney_bar_number": ${ defendants_attorney_bar_number }
-      - "plaintiffs_attorney_address_block": ${ plaintiffs_attorney[0].address.block() }
-      - "defendants_attorney_address_block": ${ defendants_attorney[0].address.block() }
+      # uses attorney address as default if there is 1 attorney, otherwise uses plaintiff address as         default. 
+      - "plaintiffs_attorney_address_block": |
+            % if plaintiffs_attorney.target_number == 1:
+            ${ plaintiffs_attorney[0].address.block() }
+            % else:
+            ${ plaintiffs[0].address.block() }
+            % endif
+      - "defendants_attorney_address_block": |
+            % if defendants_attorney.target_number == 1:
+            ${ defendants_attorney[0].address.block() }
+            % else:
+            ${ defendants[0].address.block() }
+            % endif     
       - "plaintiffs_attorney_phone_number": ${ plaintiffs_attorney[0].phone_number }
       - "defendants_attorney_phone_number": ${ defendants_attorney[0].phone_number }
       - "motion_title": ${ motion_title }
@@ -1176,7 +1282,7 @@ attachments:
       - "hearing_at_court_yes": ${ hearing_at_court }
       - "hearing_at_court_no": ${ not hearing_at_court }
       - "hearing_address_on_one_line": ${ hearing_address_on_one_line }
-      - "motion_body": ${ motion_body }
+      - "motion_body": ${ simpmotion_attachment.safe_value('motion_body') }
       - "signature_date": ${ signature_date }
       # It's a signature: test which file version this is; leave empty unless it's the final version)
       - "users_signature_1": ${ users.signature_1 if i == 'final' else '' }
