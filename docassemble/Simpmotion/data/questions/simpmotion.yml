@@ -50,6 +50,9 @@ code: |
   AL_DEFAULT_STATE = "MI"
 ---
 code: |
+  AL_DEFAULT_OVERFLOW_MESSAGE = "  Please see attachment."
+---
+code: |
   github_repo_name =  'docassemble-Simpmotion'
 ---
 code: |
@@ -63,6 +66,7 @@ objects:
   # https://suffolklitlab.org/legal-tech-class/docs/repeated-information
   - users: ALPeopleList.using(ask_number=True,target_number=1)
   - other_parties: ALPeopleList.using(ask_number=True)
+  - first_party_user_side: ALPeopleList.using(ask_number=True)
   - defendants_attorney: ALPeopleList.using(ask_number=True)
   - plaintiffs_attorney: ALPeopleList.using(ask_number=True)
   - trial_court: Organization
@@ -124,17 +128,23 @@ code: |
   user_ask_role
   # user_role
   set_progress(33)
+  users.gather()
   multiple_users
   if multiple_users==True:
-    multiple_users_warning
-  users.gather()
+    first_party_user_side  
+    if first_party_user_side.target_number == 1:
+      first_party_user_side.gather()
   # this interview already tells us to assume user has no attorney, so presuming that here too
-  if user_ask_role == 'plaintiff':
-    if multiple_users == False:
-      plaintiffs[0].address.address
+  if multiple_users == True and first_party_user_side.target_number ==1:
+      first_party_user_side[0].address.address
+      first_party_user_side[0].phone_number
   else:
-    if multiple_users == False:
+    if user_ask_role == 'plaintiff':
+      plaintiffs[0].address.address
+      plaintiffs[0].phone_number
+    else:
       defendants[0].address.address
+      defendants[0].phone_number
   # presents correct version of multiple_other_parties screen depending on user role
   if user_ask_role=='plaintiff':
     user_is_plaintiff_logic
@@ -619,6 +629,15 @@ fields:
       variable: defendants_attorney.target_number
       is: 2
 ---
+id: user phone number
+question: |
+  What is your phone number?
+subquestion: |
+  Write "none" if you have no phone number.
+fields:  
+  - Phone number: users[0].phone_number
+    required: True
+---
 id: docket number
 question: |
   What is your case number?
@@ -760,18 +779,20 @@ buttons:
         multiple_other_parties = True
         user_is_defendant_logic = True
 ---
-id: multiple users warning
-continue button field: multiple_users_warning
+id: user is first party
 question: |
   % if user_ask_role=='plaintiff':
-  You will need to write in the plaintiffs' or petitioners' names yourself.
+  Are you the first plaintiff or petitioner listed on the court paperwork?
   % else: 
-  You will need to write in the defendants' or respondents' names yourself.
+  Are you the first defendant or respondent listed on the court paperwork?
   % endif
-subquestion: |
-  This tool can only print one party on the form for each side of the case.  You will need to neatly write in the names of the parties on your side of the case yourself.  We will give you instructions when you complete this tool.  
-
-  We will still ask for your name because it also goes on another part of the form.
+buttons:
+  - Yes:
+      code: |
+        first_party_user_side.target_number = 0
+  - No:
+      code: |
+        first_party_user_side.target_number = 1
 ---
 id: multiple other parties warning
 continue button field: multiple_other_parties_warning
@@ -860,7 +881,9 @@ subquestion: |
 fields:
   - "Your motion": motion_body
     input type: area
-    # maxlength: 1209
+    rows: 12
+    hint: Type your motion here.
+    # maxlength: 1209 [took out maxlength because added overflow field]
 ---
 id: Do you know hearing time and place
 question: |
@@ -1218,7 +1241,7 @@ attachment:
   docx template file: simpmotion_addendum_template.docx
 ---
 code: |
-  simpmotion_attachment.overflow_fields['motion_body'].overflow_trigger=1209
+  simpmotion_attachment.overflow_fields['motion_body'].overflow_trigger=2000
   simpmotion_attachment.overflow_fields['motion_body'].label = "Motion (continued)"
   simpmotion_attachment.overflow_fields.gathered=True
 ---
@@ -1233,6 +1256,7 @@ attachments:
     variable name: simpmotion_attachment[i]        
     skip undefined: True
     pdf template file: simpmotion.pdf
+ #   editable: False
     fields:
       - "trial_court_circuit": ${ trial_court.circuit }
       - "trial_court_district": ${ trial_court.district }
@@ -1282,7 +1306,7 @@ attachments:
       - "hearing_at_court_yes": ${ hearing_at_court }
       - "hearing_at_court_no": ${ not hearing_at_court }
       - "hearing_address_on_one_line": ${ hearing_address_on_one_line }
-      - "motion_body": ${ simpmotion_attachment.safe_value('motion_body') }
+      - "motion_body": ${ indent(indent(single_to_double_newlines(simpmotion_attachment.safe_value('motion_body', preserve_newlines=True)))) }
       - "signature_date": ${ signature_date }
       # It's a signature: test which file version this is; leave empty unless it's the final version)
       - "users_signature_1": ${ users.signature_1 if i == 'final' else '' }
