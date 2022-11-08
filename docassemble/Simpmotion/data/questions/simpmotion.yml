@@ -49,6 +49,10 @@ code: |
   # This controls the default state in address field questions
   AL_DEFAULT_STATE = "MI"
 ---
+  # overflow--sets default message
+  code: |
+    AL_DEFAULT_OVERFLOW_MESSAGE = "  Please see attachment."
+---
 code: |
   github_repo_name =  'docassemble-Simpmotion'
 ---
@@ -145,7 +149,7 @@ code: |
   if other_parties.target_number == 1:
     other_parties.gather()
   plaintiffs_attorney.target_number
-  if plaintiffs_attorney.target_number > 0 and plaintiffs_attorney.target_number < 2:
+  if plaintiffs_attorney.target_number == 1:
     plaintiffs_attorney.gather()
     plaintiffs_attorney[0].phone_number
     plaintiffs_attorney[0].address.address
@@ -153,7 +157,7 @@ code: |
   set_progress(44)
   if other_parties.there_are_any == True:
     defendants_attorney.target_number
-    if defendants_attorney.target_number > 0 and defendants_attorney.target_number < 2:
+    if defendants_attorney.target_number == 1:
       defendants_attorney.gather()
       defendants_attorney[0].phone_number
       defendants_attorney[0].address.address
@@ -860,7 +864,9 @@ subquestion: |
 fields:
   - "Your motion": motion_body
     input type: area
-    # maxlength: 1209
+    rows: 12
+    hint: Type your motion here.
+    # maxlength: 1209 [took out maxlength because added overflow field]
 ---
 id: Do you know hearing time and place
 question: |
@@ -1207,18 +1213,21 @@ progress: 100
 ---
 objects:
   - simpmotion_post_interview_instructions: ALDocument.using(title="Instructions", filename="simpmotion_next_steps.docx", enabled=True, has_addendum=False, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  #for overflow, set has_addendum = True
   - simpmotion_attachment: ALDocument.using(title="Motion and Notice of Hearing", filename="simpmotion.pdf", enabled=True, has_addendum=True, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
 ---
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[simpmotion_post_interview_instructions,simpmotion_attachment], filename="simpmotion.pdf_package.pdf", title="All forms to download for your records", enabled=True)
   - al_court_bundle: ALDocumentBundle.using(elements=[simpmotion_attachment], filename="simpmotion.pdf_package.pdf", title="All forms to download for your records", enabled=True)
 ---
+  # overflow--add this atttachment addendum
 attachment:
   variable name: simpmotion_attachment.addendum
   docx template file: simpmotion_addendum_template.docx
 ---
 code: |
-  simpmotion_attachment.overflow_fields['motion_body'].overflow_trigger=1209
+  # overflow--sets character limit, addendum label, etc.
+  simpmotion_attachment.overflow_fields['motion_body'].overflow_trigger=1000
   simpmotion_attachment.overflow_fields['motion_body'].label = "Motion (continued)"
   simpmotion_attachment.overflow_fields.gathered=True
 ---
@@ -1233,6 +1242,7 @@ attachments:
     variable name: simpmotion_attachment[i]        
     skip undefined: True
     pdf template file: simpmotion.pdf
+    # editable: False
     fields:
       - "trial_court_circuit": ${ trial_court.circuit }
       - "trial_court_district": ${ trial_court.district }
@@ -1282,7 +1292,8 @@ attachments:
       - "hearing_at_court_yes": ${ hearing_at_court }
       - "hearing_at_court_no": ${ not hearing_at_court }
       - "hearing_address_on_one_line": ${ hearing_address_on_one_line }
-      - "motion_body": ${ simpmotion_attachment.safe_value('motion_body') }
+      # inserts only the "safe" number of characters here, seems to be set via the trigger value, formatting
+      - "motion_body": ${ indent(indent(single_to_double_newlines(simpmotion_attachment.safe_value('motion_body', preserve_newlines=True)))) }
       - "signature_date": ${ signature_date }
       # It's a signature: test which file version this is; leave empty unless it's the final version)
       - "users_signature_1": ${ users.signature_1 if i == 'final' else '' }
