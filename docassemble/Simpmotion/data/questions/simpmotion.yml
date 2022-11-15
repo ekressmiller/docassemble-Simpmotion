@@ -172,10 +172,10 @@ code: |
   motion_body
   has_hearing_info
   if has_hearing_info == True:
-    hearing_time
     hearing_at_court
     if hearing_at_court == False:
       hearing_address_on_one_line
+    hearing_time
     judge.name
     trial_court_bar_number
   if has_hearing_info == False:
@@ -256,7 +256,7 @@ id: Navigation and Saving Your Form
 question: |
   Navigation and Saving Your Form
 subquestion: |
-  If you make a mistake at any time or want to review your answers, use the Next, Previous, First, and Last buttons below. You can move to a specific page by clicking on it in the left pane of this window. If you can't finish today, you can save your answers by creating a username and password on the LawHelp Interactive website. This lets you log back into the site later and finish, or go back and change any of your answers. 
+  If you make a mistake at any time or want to review your answers, use the Undo button below. You can see your earlier answers by clicking on the "Review your answers" button [**Note this is not really working yet for most of the interview**]. If you can't finish today, you can save your answers by creating a username and password. This lets you log back into the site later and finish, or go back and change any of your answers. 
   
   Make note of your username and password.
 continue button field: navigation_and_saving
@@ -726,19 +726,10 @@ subquestion: |
 fields:
   - "Judge's name": judge.name
     maxlength: 40
+    required: False
   - "Judge's bar number": trial_court_bar_number
     maxlength: 9
-action buttons:
-  - label: I do not know
-    action: no_hearing_info
-    color: danger
-    # placement: 
----
-event: no_hearing_info
-code: |
-  has_hearing_info = False
-  # below strips the values for the hearing info variables, if they were entered
-  undefine('judge.name', 'trial_court_bar_number', 'hearing_time', 'hearing_date', 'hearing_address_on_one_line')
+    required: False
 ---
 id: multiple users
 question: |
@@ -929,35 +920,29 @@ question: |
 fields:
   - "Hearing Time": hearing_time
     maxlength: 13
+    required: False
   - "Date of hearing": hearing_date
     datatype: date
-action buttons:
-  - label: I do not know
-    action: no_hearing_info
-    color: danger
-    # placement: 
+    required: False
 ---
 id: Will the hearing be held at the courthouse
 question: |
   Will the hearing be held in person at the courthouse?
 yesno: hearing_at_court
-action buttons:
-  - label: I do not know
-    action: no_hearing_info
-    color: danger
-    # placement: 
 ---
+ # if modifier is needed to make this work as followup question on review screen
+if: |
+  hearing_at_court == False
 id: What is the address for the hearing
 question: |
-  What is the address for the hearing?
+  Where will the hearing be?
+subquestion: |
+  * Type the address if it will be at a physical location.
+  * If the hearing will be online or by phone, briefly explain.
 fields:
   - "Address of the hearing": hearing_address_on_one_line
     maxlength: 66
-action buttons:
-  - label: I do not know
-    action: no_hearing_info
-    color: danger
-    # placement: 
+    required: False
 ---
 id: OK Not to Have Hearing Info
 continue button field: no_hearing_info_ok
@@ -1024,31 +1009,29 @@ event: review_simpmotion
 question: |
   Review your answers
 review:
-  - Edit: trial_court.circuit
-    button: |
-      **Circuit Court Number**:
-      ${ trial_court.circuit }
-  - Edit: trial_court.district
-    button: |
-      **District Court Number**:
-      ${ trial_court.district }
-  - Edit: trial_court
-    button: |
-      **trial_court**
-
-      % if defined("trial_court.address"):
-      * address: ${ trial_court.address.block() }
-      % endif
-      % if defined("trial_court.phone_number"):
-      * phone_number: ${ trial_court.phone_number }
-      % endif
-      % if defined("judge.name.first"):
-      * name: ${ judge.name.full() }
-      % endif
   - Edit: docket_number
     button: |
-      **Docket number**:
-      ${ docket_number }
+      **Case number**:
+      ${ docket_number }  
+  - Edit: trial_court
+    button: |
+      **Trial Court Information**
+      
+      % if defined("trial_court.address.county"):
+      * County: ${ trial_court.address.county }
+      % endif
+      % if defined("trial_court.circuit"):
+      * Circuit Court Number: ${ trial_court.circuit }
+      % endif
+      % if defined("trial_court.district"):
+      * District Court Number: ${ trial_court.district }
+      % endif
+      % if defined("trial_court.address"):
+      * Address: ${ trial_court.address.block() }
+      % endif
+      % if defined("trial_court.phone_number"):
+      * Phone number: ${ trial_court.phone_number }
+      % endif
   - Edit: plaintiffs.revisit
     button: |
       **Plaintiffs**
@@ -1085,41 +1068,44 @@ review:
     button: |
       **Defendant\'s or Respondent\'s attorney\'s bar number**:
       ${ defendants_attorney_bar_number }
-  - Edit: motion_title
+  - Edit: 
+      - hearing_date
+      - hearing_time
+      - judge.name
+      - trial_court_bar_number 
+      - hearing_at_court
+      - follow up:
+        - hearing_address_on_one_line
     button: |
-      **Motion Title**:
-      ${ motion_title }
-  - Edit: users.revisit
+      **Hearing Information**:
+      
+      % if defined("hearing_date"):
+      * Hearing Date: ${ hearing_date }
+      % endif
+      % if defined("hearing_time"):
+      * Hearing Time: ${ hearing_time }
+      % endif
+      % if defined("judge.name"):
+      * Judge: ${ judge.name }
+      % endif
+      % if defined("hearing_at_court"):
+      * Will the hearing be at the courthouse? ${ word(yesno(hearing_at_court)) }
+      % endif 
+      % if defined("hearing_address_on_one_line"):
+      * Hearing Place: ${ hearing_address_on_one_line }
+      % endif 
+  - Edit: 
+      - motion_title
+      - motion_body
     button: |
-      **Users**
-
-      % for item in users:
-        * ${ item }
-      % endfor
-  - Edit: hearing_time
-    button: |
-      **Hearing Time**:
-      ${ hearing_time }
-  - Edit: trial_court_bar_number
-    button: |
-      **Judge\'s bar number**:
-      ${ trial_court_bar_number }
-  - Edit: hearing_date
-    button: |
-      **Date of hearing**:
-      ${ hearing_date }
-  - Edit: hearing_at_court
-    button: |
-      **Will the hearing be at the courthouse?**:
-      ${ word(yesno(hearing_at_court)) }
-  - Edit: hearing_address_on_one_line
-    button: |
-      **Address of the hearing**:
-      ${ hearing_address_on_one_line }
-  - Edit: motion_body
-    button: |
-      **Your motion**:
-      > ${ single_paragraph(motion_body) }
+      **Your Motion**:
+      
+      % if defined("motion_title"):
+      * **Title**: ${ motion_title }
+      % endif
+      % if defined("motion_body"):
+      * > ${ motion_body }
+      % endif
   - Edit: signature_date
     button: |
       **Date of signature**:
@@ -1136,6 +1122,7 @@ review:
     button: |
       **users.signature_2**:
       ${ users.signature_2 }
+resume button label: Continue interview
 ---
 continue button field: plaintiffs.revisit
 question: |
