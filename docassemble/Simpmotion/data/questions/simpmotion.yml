@@ -2,6 +2,7 @@
 include:
   - docassemble.AssemblyLine:assembly_line.yml
   - docassemble.ALAnyState:any_state.yml
+  - docassemble.mlhframework:mlh_interview_framework.yml
 ---
 metadata:
   title: |
@@ -683,11 +684,11 @@ fields:
     choices:
       - Circuit Court: court_is_circuit
       - District Court: court_is_district
-  - "Circuit Court Number": trial_court.circuit
+  - "Circuit Court": court_index
     show if: 
       variable: court_type
       is: court_is_circuit
-    maxlength: 4
+    code: court_list.filter_courts(None)
   - "District Court Number": trial_court.district
     show if: 
       variable: court_type
@@ -704,6 +705,9 @@ fields:
     required: True
   - Postal code: trial_court.address.zip    
     required: True
+---
+code: |
+  trial_court.circuit = court_list.as_court('trial_court.circuit',court_index)
 ---
 template: help_user_choose_court_template
 subject: |
@@ -1303,13 +1307,13 @@ attachments:
             % if plaintiffs_attorney.target_number == 1 and plaintiffs_share_lawyer == True:
             ${ plaintiffs_attorney[0] }
             % elif (user_ask_role == 'plaintiff' and multiple_users == False) or (user_ask_role == 'defendant' and plaintiffs.target_number == 1):
-            Pro se
+            Self-represented
             % endif
       - "defendants_attorney_name": |
             % if defendants_attorney.target_number == 1 and defendants_share_lawyer == True:
             ${ defendants_attorney[0] }
             % elif (user_ask_role == 'defendant' and multiple_users == False) or (user_ask_role == 'plaintiff' and defendants.target_number == 1):
-            Pro se
+            Self-represented
             % endif
       - "defendants_attorney_bar_number": ${ defendants_attorney_bar_number }
       # uses attorney address as default if there is 1 attorney, otherwise uses plaintiff address as         default. 
