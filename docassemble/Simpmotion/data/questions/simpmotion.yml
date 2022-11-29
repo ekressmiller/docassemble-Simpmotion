@@ -122,6 +122,8 @@ code: |
   #  trial_court.phone_number
   county_choice
   court_index
+  #calling value of the_court to load AL_court_loader object
+  the_court
   # Below sets the user_role by asking a question.
   # You can set user_role directly instead to either 'plaintiff' or 'defendant'
   user_ask_role
@@ -969,6 +971,7 @@ review:
     button: |
       **Trial Court Information**
       
+      * Trial court name: ${ the_court }
       % if defined("trial_court.address.county"):
       * County: ${ trial_court.address.county }
       % endif
@@ -981,8 +984,8 @@ review:
       % if defined("trial_court.address"):
       * Address: ${ trial_court.address.block() }
       % endif
-      % if defined("trial_court.phone_number"):
-      * Phone number: ${ trial_court.phone_number }
+      % if defined("the_court.phone_number"):
+      * Phone number: ${ phone_number_formatted(the_court.phone_number) }
       % endif
   - Edit: plaintiffs.revisit
     button: |
@@ -1128,7 +1131,7 @@ columns:
   - Address: |
       row_item.address.block() if defined("row_item.address") else ""
   - Phone number: |
-      row_item.phone_number if defined("row_item.phone_number") else ""
+      phone_number_formatted(row_item.phone_number) if defined("row_item.phone_number") else ""
 edit:
   - name.first
   - address.address
@@ -1152,7 +1155,7 @@ columns:
   - Address: |
       row_item.address.block() if defined("row_item.address") else ""
   - Phone number: |
-      row_item.phone_number if defined("row_item.phone_number") else ""
+      phone_number_formatted(row_item.phone_number) if defined("row_item.phone_number") else ""
 edit:
   - name.first
   - address.address
@@ -1230,12 +1233,22 @@ attachments:
     pdf template file: simpmotion.pdf
     # editable: False
     fields:
-      - "trial_court_circuit": ${ trial_court.circuit }
-      - "trial_court_district": ${ trial_court.district }
-      - "trial_court_county": ${ trial_court.address.county }
+      - "trial_court_circuit": |
+            % if the_court.type == 'circuit':
+            ${ the_court.number }
+            % else:
+            ${ '' }
+            % endif
+      - "trial_court_district": |
+            % if the_court.type == 'district':
+            ${ the_court.number }
+            % else:
+            ${ '' }
+            % endif
+      - "trial_court_county": ${ the_court.address.county }
       - "docket_number": ${ docket_number }
-      - "trial_court_address_on_one_line": ${ trial_court.address.on_one_line() }
-      - "trial_court_phone_number": ${ trial_court.phone_number }
+      - "trial_court_address_on_one_line": ${ the_court.address.on_one_line() }
+      - "trial_court_phone_number": ${ phone_number_formatted(the_court.phone) }
       # removes plaintiff from header if there are multiple user plaintiffs, if plaintiff not user,         won't collect plaintiff name anyway
       - "plaintiffs_name": |
             % if user_ask_role == 'plaintiff' and multiple_users == True:
@@ -1279,15 +1292,15 @@ attachments:
             % endif     
       - "plaintiffs_attorney_phone_number": |
             % if plaintiffs_attorney.target_number == 1 and plaintiffs_share_lawyer == True:
-            ${ plaintiffs_attorney[0].phone_number }
+            ${ phone_number_formatted(plaintiffs_attorney[0].phone_number) }
             % else:
-            ${ plaintiffs[0].phone_number }
+            ${ phone_number_formatted(plaintiffs[0].phone_number) }
             % endif
       - "defendants_attorney_phone_number": |
             % if defendants_attorney.target_number == 1 and defendants_share_lawyer == True:
-            ${ defendants_attorney[0].phone_number }
+            ${ phone_number_formatted(defendants_attorney[0].phone_number) }
             % else:
-            ${ defendants[0].phone_number }
+            ${ phone_number_formatted(defendants[0].phone_number) }
             % endif
       - "motion_title": ${ motion_title }
       - "users_name": ${ users[0] }
