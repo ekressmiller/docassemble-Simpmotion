@@ -2,6 +2,7 @@
 include:
   - docassemble.AssemblyLine:assembly_line.yml
   - docassemble.ALAnyState:any_state.yml
+  - docassemble.mlhframework:mlh_interview_framework.yml
 ---
 metadata:
   title: |
@@ -71,6 +72,9 @@ objects:
   - plaintiffs_attorney: ALPeopleList.using(ask_number=True)
   - trial_court: Organization
   - judge: ALPeopleList.using(ask_number=True,target_number=1)
+  # telling interview to look to mlhframework package for source spreadsheet
+  - court_list: ALCourtLoader.using(file_name='docassemble.mlhframework:data/sources/court_sample.xlsx')
+
 ---
  # assumes there is a plaintiff/petitioner if user is defendant/respondent
 code: |
@@ -112,10 +116,14 @@ code: |
   trial_court
   # Bryce added below as placeholder to be replaced by something for Michigan courts later?
   trial_court.name.text = "Trial Court"
-  trial_court.address.county
-  court_type
-  set_progress(22)
-  trial_court.phone_number
+  #  trial_court.address.county#
+  #  court_type
+  #  set_progress(22)
+  #  trial_court.phone_number
+  county_choice
+  court_index
+  #calling value of the_court to load AL_court_loader object
+  the_court
   # Below sets the user_role by asking a question.
   # You can set user_role directly instead to either 'plaintiff' or 'defendant'
   user_ask_role
@@ -662,61 +670,8 @@ fields:
   # - I don't know the docket number: dont_know_docket_number
   #   datatype: yesno    
   - no label: docket_number
-  #  hide if: dont_know_docket_number
----
-id: Choose a court
-question: |
-  % if al_form_type == 'starts_case':
-  What court do you want to file in?
-  % elif al_form_type == 'appeal':
-  What is the name of the trial court your case was originally filed in?
-  % else:
-  What court is your case in?
-  % endif
-subquestion: |
-  ${ collapse_template(help_user_choose_court_template) }
-fields:
-  - "Trial court county": trial_court.address.county
     maxlength: 25
-  - Type of court: court_type
-    input type: radio
-    choices:
-      - Circuit Court: court_is_circuit
-      - District Court: court_is_district
-  - "Circuit Court Number": trial_court.circuit
-    show if: 
-      variable: court_type
-      is: court_is_circuit
-    maxlength: 4
-  - "District Court Number": trial_court.district
-    show if: 
-      variable: court_type
-      is: court_is_district
-    maxlength: 4  
-  - Address: trial_court.address.address
-    address autocomplete: True
-    required: True
-  - Suite: trial_court.address.unit
-    required: False
-  - City: trial_court.address.city
-    required: True
-  - State: trial_court.address.state
-    required: True
-  - Postal code: trial_court.address.zip    
-    required: True
----
-template: help_user_choose_court_template
-subject: |
-  How do I know?
-content: |
-  You can find the case number, county and court by looking at the top of court papers from your case such as the summons, complaint, petition, or answer in your case. You may need to contact the court or check its website for the address.  
----
-id: What is the trial court s phone number
-question: |
-  What is the trial court's phone number?
-fields:
-  - "Trial court's phone number": trial_court.phone_number
-    maxlength: 14
+  #  hide if: dont_know_docket_number
 ---
 id: Judge information
 question: |
@@ -725,10 +680,10 @@ subquestion: |
   What is the name and bar number (or "P-Number") of the judge who will hear this motion?
 fields:
   - "Judge's name": judge.name
-    maxlength: 40
+    maxlength: 35
     required: False
   - "Judge's bar number": trial_court_bar_number
-    maxlength: 9
+    maxlength: 7
     required: False
 ---
 id: multiple users
@@ -837,7 +792,7 @@ subquestion: |
   ${ collapse_template(help_user_find_bar_number_template) }
 fields:
   - "Plaintiff's or Petitioner lawyer's bar number": plaintiffs_attorney_bar_number
-    maxlength: 11
+    maxlength: 7
 ---
 id: Defendant or Respondent s Attorney Information
 question: |
@@ -846,7 +801,7 @@ subquestion: |
   ${ collapse_template(help_user_find_bar_number_template) }
 fields:
   - "Defendant or Respondent lawyer's bar number": defendants_attorney_bar_number
-    maxlength: 8
+    maxlength: 7
 ---
 template: help_user_find_bar_number_template
 subject: |
@@ -862,6 +817,7 @@ subquestion: |
 fields:  
   - Phone number: users[0].phone_number
     required: True
+    maxlength: 20
 ---
 id: Motion Title
 question: |
@@ -874,7 +830,7 @@ under: |
   If you are not sure of the title you can leave this blank and neatly write it by hand before you file it in court.
 fields:
   - "Motion Title": motion_title
-    maxlength: 85
+    maxlength: 60
     required: False
 ---
 id: Your Motion
@@ -918,11 +874,12 @@ id: When will the hearing be
 question: |
   When will the hearing be?
 fields:
-  - "Hearing Time": hearing_time
-    maxlength: 13
-    required: False
   - "Date of hearing": hearing_date
     datatype: date
+    required: False
+    min: ${ today() }
+  - "Hearing Time": hearing_time
+    datatype: time
     required: False
 ---
 id: Will the hearing be held at the courthouse
@@ -941,7 +898,7 @@ subquestion: |
   * If the hearing will be online or by phone, briefly explain.
 fields:
   - "Address of the hearing": hearing_address_on_one_line
-    maxlength: 66
+    maxlength: 50
     required: False
 ---
 id: OK Not to Have Hearing Info
@@ -1017,6 +974,7 @@ review:
     button: |
       **Trial Court Information**
       
+      * Trial court name: ${ the_court }
       % if defined("trial_court.address.county"):
       * County: ${ trial_court.address.county }
       % endif
@@ -1029,8 +987,8 @@ review:
       % if defined("trial_court.address"):
       * Address: ${ trial_court.address.block() }
       % endif
-      % if defined("trial_court.phone_number"):
-      * Phone number: ${ trial_court.phone_number }
+      % if defined("the_court.phone_number"):
+      * Phone number: ${ phone_number_formatted(the_court.phone_number) }
       % endif
   - Edit: plaintiffs.revisit
     button: |
@@ -1176,7 +1134,7 @@ columns:
   - Address: |
       row_item.address.block() if defined("row_item.address") else ""
   - Phone number: |
-      row_item.phone_number if defined("row_item.phone_number") else ""
+      phone_number_formatted(row_item.phone_number) if defined("row_item.phone_number") else ""
 edit:
   - name.first
   - address.address
@@ -1200,7 +1158,7 @@ columns:
   - Address: |
       row_item.address.block() if defined("row_item.address") else ""
   - Phone number: |
-      row_item.phone_number if defined("row_item.phone_number") else ""
+      phone_number_formatted(row_item.phone_number) if defined("row_item.phone_number") else ""
 edit:
   - name.first
   - address.address
@@ -1278,12 +1236,22 @@ attachments:
     pdf template file: simpmotion.pdf
     # editable: False
     fields:
-      - "trial_court_circuit": ${ trial_court.circuit }
-      - "trial_court_district": ${ trial_court.district }
-      - "trial_court_county": ${ trial_court.address.county }
+      - "trial_court_circuit": |
+            % if the_court.type == 'circuit':
+            ${ the_court.number }
+            % else:
+            ${ '' }
+            % endif
+      - "trial_court_district": |
+            % if the_court.type == 'district':
+            ${ the_court.number }
+            % else:
+            ${ '' }
+            % endif
+      - "trial_court_county": ${ the_court.address.county }
       - "docket_number": ${ docket_number }
-      - "trial_court_address_on_one_line": ${ trial_court.address.on_one_line() }
-      - "trial_court_phone_number": ${ trial_court.phone_number }
+      - "trial_court_address_on_one_line": ${ the_court.address.on_one_line() }
+      - "trial_court_phone_number": ${ phone_number_formatted(the_court.phone) }
       # removes plaintiff from header if there are multiple user plaintiffs, if plaintiff not user,         won't collect plaintiff name anyway
       - "plaintiffs_name": |
             % if user_ask_role == 'plaintiff' and multiple_users == True:
@@ -1298,51 +1266,57 @@ attachments:
             % else:
             ${ defendants[0] }
             % endif
-      - "plaintiffs_attorney_bar_number": ${ plaintiffs_attorney_bar_number }
+      - "plaintiffs_attorney_bar_number": |
+            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
+            ${ plaintiffs_attorney_bar_number }
+            % endif
       - "plaintiffs_attorney_name": |
-            % if plaintiffs_attorney.target_number == 1 and plaintiffs_share_lawyer == True:
+            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
             ${ plaintiffs_attorney[0] }
-            % elif (user_ask_role == 'plaintiff' and multiple_users == False) or (user_ask_role == 'defendant' and plaintiffs.target_number == 1):
-            Pro se
+            % elif ((user_ask_role == 'plaintiff' and multiple_users == False) or (user_ask_role == 'defendant' and plaintiffs.target_number == 1)) and plaintiffs_attorney.target_number == 0:
+            Self-represented
             % endif
       - "defendants_attorney_name": |
-            % if defendants_attorney.target_number == 1 and defendants_share_lawyer == True:
+            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
             ${ defendants_attorney[0] }
-            % elif (user_ask_role == 'defendant' and multiple_users == False) or (user_ask_role == 'plaintiff' and defendants.target_number == 1):
-            Pro se
+            % elif ((user_ask_role == 'defendant' and multiple_users == False) or (user_ask_role == 'plaintiff' and defendants.target_number == 1)) and defendants_attorney.target_number == 0:
+            Self-represented
             % endif
-      - "defendants_attorney_bar_number": ${ defendants_attorney_bar_number }
-      # uses attorney address as default if there is 1 attorney, otherwise uses plaintiff address as         default. 
+      - "defendants_attorney_bar_number": |
+            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
+            ${ defendants_attorney_bar_number }
+            % endif
+      # uses attorney address as default if there is 1 attorney for all plaintiffs, otherwise uses plaintiff address as default. 
       - "plaintiffs_attorney_address_block": |
-            % if plaintiffs_attorney.target_number == 1:
+            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
             ${ plaintiffs_attorney[0].address.block() }
             % else:
             ${ plaintiffs[0].address.block() }
             % endif
       - "defendants_attorney_address_block": |
-            % if defendants_attorney.target_number == 1:
+            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
             ${ defendants_attorney[0].address.block() }
             % else:
             ${ defendants[0].address.block() }
             % endif     
       - "plaintiffs_attorney_phone_number": |
-            % if plaintiffs_attorney.target_number == 1 and plaintiffs_share_lawyer == True:
-            ${ plaintiffs_attorney[0].phone_number }
+            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
+            ${ phone_number_formatted(plaintiffs_attorney[0].phone_number) }
             % else:
-            ${ plaintiffs[0].phone_number }
+            ${ phone_number_formatted(plaintiffs[0].phone_number) }
             % endif
       - "defendants_attorney_phone_number": |
-            % if defendants_attorney.target_number == 1 and defendants_share_lawyer == True:
-            ${ defendants_attorney[0].phone_number }
+            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
+            ${ phone_number_formatted(defendants_attorney[0].phone_number) }
             % else:
-            ${ defendants[0].phone_number }
+            ${ phone_number_formatted(defendants[0].phone_number) }
             % endif
       - "motion_title": ${ motion_title }
       - "users_name": ${ users[0] }
       - "trial_court_name": ${ judge.name }
-      - "hearing_time": ${ hearing_time }
+      - "hearing_time": ${ format_time(hearing_time) }
       - "trial_court_bar_number": ${ trial_court_bar_number }
-      - "hearing_date": ${ hearing_date }
+      - "hearing_date": ${ format_date(hearing_date) }
       - "hearing_at_court_yes": ${ hearing_at_court }
       - "hearing_at_court_no": ${ not hearing_at_court }
       - "hearing_address_on_one_line": ${ hearing_address_on_one_line }
