@@ -670,6 +670,7 @@ fields:
   # - I don't know the docket number: dont_know_docket_number
   #   datatype: yesno    
   - no label: docket_number
+    maxlength: 25
   #  hide if: dont_know_docket_number
 ---
 id: Judge information
@@ -679,10 +680,10 @@ subquestion: |
   What is the name and bar number (or "P-Number") of the judge who will hear this motion?
 fields:
   - "Judge's name": judge.name
-    maxlength: 40
+    maxlength: 35
     required: False
   - "Judge's bar number": trial_court_bar_number
-    maxlength: 9
+    maxlength: 7
     required: False
 ---
 id: multiple users
@@ -791,7 +792,7 @@ subquestion: |
   ${ collapse_template(help_user_find_bar_number_template) }
 fields:
   - "Plaintiff's or Petitioner lawyer's bar number": plaintiffs_attorney_bar_number
-    maxlength: 11
+    maxlength: 7
 ---
 id: Defendant or Respondent s Attorney Information
 question: |
@@ -800,7 +801,7 @@ subquestion: |
   ${ collapse_template(help_user_find_bar_number_template) }
 fields:
   - "Defendant or Respondent lawyer's bar number": defendants_attorney_bar_number
-    maxlength: 8
+    maxlength: 7
 ---
 template: help_user_find_bar_number_template
 subject: |
@@ -816,6 +817,7 @@ subquestion: |
 fields:  
   - Phone number: users[0].phone_number
     required: True
+    maxlength: 20
 ---
 id: Motion Title
 question: |
@@ -828,7 +830,7 @@ under: |
   If you are not sure of the title you can leave this blank and neatly write it by hand before you file it in court.
 fields:
   - "Motion Title": motion_title
-    maxlength: 85
+    maxlength: 60
     required: False
 ---
 id: Your Motion
@@ -872,11 +874,12 @@ id: When will the hearing be
 question: |
   When will the hearing be?
 fields:
-  - "Hearing Time": hearing_time
-    maxlength: 13
-    required: False
   - "Date of hearing": hearing_date
     datatype: date
+    required: False
+    min: ${ today() }
+  - "Hearing Time": hearing_time
+    datatype: time
     required: False
 ---
 id: Will the hearing be held at the courthouse
@@ -895,7 +898,7 @@ subquestion: |
   * If the hearing will be online or by phone, briefly explain.
 fields:
   - "Address of the hearing": hearing_address_on_one_line
-    maxlength: 66
+    maxlength: 50
     required: False
 ---
 id: OK Not to Have Hearing Info
@@ -1263,41 +1266,47 @@ attachments:
             % else:
             ${ defendants[0] }
             % endif
-      - "plaintiffs_attorney_bar_number": ${ plaintiffs_attorney_bar_number }
+      - "plaintiffs_attorney_bar_number": |
+            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
+            ${ plaintiffs_attorney_bar_number }
+            % endif
       - "plaintiffs_attorney_name": |
-            % if plaintiffs_attorney.target_number == 1 and plaintiffs_share_lawyer == True:
+            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
             ${ plaintiffs_attorney[0] }
-            % elif (user_ask_role == 'plaintiff' and multiple_users == False) or (user_ask_role == 'defendant' and plaintiffs.target_number == 1):
+            % elif ((user_ask_role == 'plaintiff' and multiple_users == False) or (user_ask_role == 'defendant' and plaintiffs.target_number == 1)) and plaintiffs_attorney.target_number == 0:
             Self-represented
             % endif
       - "defendants_attorney_name": |
-            % if defendants_attorney.target_number == 1 and defendants_share_lawyer == True:
+            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
             ${ defendants_attorney[0] }
-            % elif (user_ask_role == 'defendant' and multiple_users == False) or (user_ask_role == 'plaintiff' and defendants.target_number == 1):
+            % elif ((user_ask_role == 'defendant' and multiple_users == False) or (user_ask_role == 'plaintiff' and defendants.target_number == 1)) and defendants_attorney.target_number == 0:
             Self-represented
             % endif
-      - "defendants_attorney_bar_number": ${ defendants_attorney_bar_number }
-      # uses attorney address as default if there is 1 attorney, otherwise uses plaintiff address as         default. 
+      - "defendants_attorney_bar_number": |
+            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
+            ${ defendants_attorney_bar_number }
+            % endif
+      # uses attorney address as default if there is 1 attorney for all plaintiffs, otherwise uses plaintiff address as default. 
       - "plaintiffs_attorney_address_block": |
-            % if plaintiffs_attorney.target_number == 1:
+            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
             ${ plaintiffs_attorney[0].address.block() }
             % else:
             ${ plaintiffs[0].address.block() }
             % endif
       - "defendants_attorney_address_block": |
-            % if defendants_attorney.target_number == 1:
+            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
             ${ defendants_attorney[0].address.block() }
             % else:
             ${ defendants[0].address.block() }
             % endif     
       - "plaintiffs_attorney_phone_number": |
-            % if plaintiffs_attorney.target_number == 1 and plaintiffs_share_lawyer == True:
+            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
             ${ phone_number_formatted(plaintiffs_attorney[0].phone_number) }
             % else:
             ${ phone_number_formatted(plaintiffs[0].phone_number) }
             % endif
       - "defendants_attorney_phone_number": |
-            % if defendants_attorney.target_number == 1 and defendants_share_lawyer == True:
+            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
             ${ phone_number_formatted(defendants_attorney[0].phone_number) }
             % else:
             ${ phone_number_formatted(defendants[0].phone_number) }
@@ -1305,9 +1314,9 @@ attachments:
       - "motion_title": ${ motion_title }
       - "users_name": ${ users[0] }
       - "trial_court_name": ${ judge.name }
-      - "hearing_time": ${ hearing_time }
+      - "hearing_time": ${ format_time(hearing_time) }
       - "trial_court_bar_number": ${ trial_court_bar_number }
-      - "hearing_date": ${ hearing_date }
+      - "hearing_date": ${ format_date(hearing_date) }
       - "hearing_at_court_yes": ${ hearing_at_court }
       - "hearing_at_court_no": ${ not hearing_at_court }
       - "hearing_address_on_one_line": ${ hearing_address_on_one_line }
