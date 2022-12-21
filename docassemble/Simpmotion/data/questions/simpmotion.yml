@@ -6,7 +6,7 @@ include:
 ---
 metadata:
   title: |
-    Motion and Notice of Hearing
+    Notice of Hearing and Motion
   short title: |
     Motion and Hearing
   tags:
@@ -23,7 +23,7 @@ data:
   al_weaver_version: "1.7.0"
   generated on: "2022-08-19"
   title: >-
-    Motion and Notice of Hearing
+    Notice of Hearing and Motion
   short title: >-
     Motion and Hearing
   description: |-
@@ -58,7 +58,7 @@ code: |
   github_repo_name =  'docassemble-Simpmotion'
 ---
 code: |
-  interview_short_title = "File a motion and notice of hearing in your case"
+  interview_short_title = "File a Notice of Hearing and Motion in your case"
 ---
 code: |
   al_form_type = "existing_case" 
@@ -192,10 +192,7 @@ code: |
   users.gather()
   set_parts(subtitle=str(users))
   signature_date
-  users.signature_1
-  # Below taken out because we want them to fill in service date afterwards
-  # service_date
-  # users.signature_2
+  esign
   interview_order_simpmotion = True
 ---
 ###################### Main order ######################
@@ -224,7 +221,7 @@ comment: |
 id: Motion_and_Notice_of_Hearing
 continue button field: simpmotion_intro
 question: |
-  Motion and Notice of Hearing
+  Notice of Hearing and Motion
 subquestion: |
   You will need information about you case, the parties, and what you want the court to do.
 ---
@@ -321,11 +318,11 @@ id: Is this a probate case
 question: |
   Are you Filing in a Probate Case?
 subquestion: |
-  Is the case you will be filing in a probate case? Examples of probate cases include cases to distribute property after someone dies, guardianships, and conservatorships. 
+  Is the case a probate case? Examples of probate cases include cases to distribute property after someone dies, guardianships, and conservatorships. 
 
-  If you are not sure if you have a probate case, look for a court document from the court case. The top of each court document has information about the case. This will often list whether the court is a probate court. You can also check the two-letter case-type code at the end of the case number. To see a full list of the probate case codes visit [the State Court Administrative Office list of case-type codes](https://www.courts.michigan.gov/siteassets/court-administration/standardsguidelines/casefile/cf_casetypecodes.pdf) and scroll down to the “Probate” section.
+  If you are not sure if you have a probate case, look for a court document from the case. The top of each court document has information about the case. This will often list whether the court is a probate court. You can also check the two-letter case-type code at the end of the case number. To see a full list of the probate case codes visit [the State Court Administrative Office list of case-type codes](https://www.courts.michigan.gov/siteassets/court-administration/standardsguidelines/casefile/cf_casetypecodes.pdf) and scroll down to the “Probate” section.
 
-  **Is your case a probate case?**
+  Is your case a probate case?
 yesno: probate_case
 ---
 event: probate_case_exit
@@ -918,16 +915,12 @@ fields:
     datatype: date
 ---
 question: |
-  Sign your name
+  Electronic Signature
 subquestion: |
-  Please sign your full name in the box below.  This will be your electronic signature for the motion.
-signature: users.signature_1
----
-question: |
-  Sign your name
-subquestion: |
-  signature for service if e-filing.
-signature: users.signature_2
+  This tool can put "*/s/ ${ users[0] }*" where you would sign your name so you do not have to sign the form by hand. The court will accept this as your signature.
+
+  Would you like to add your electronic signature to your form? 
+yesno: esign
 ---
  # assumes the user has no attorney
 code: |
@@ -950,11 +943,12 @@ subquestion: |
   ${ action_button_html(url_action('review_simpmotion'), label='Edit answers', color='info') }
   
   Remember to come back to this window to continue and sign your form.
-continue button field: simpmotion_preview_question    
+continue button field: simpmotion_preview_question   
 ---
-code: |
-  signature_fields = ['users.signature_1', 'users.signature_2']
----
+# commented out because not using signature field
+# code: |
+#   signature_fields = ['users.signature_1']
+# ---
 code: |
   # This is a placeholder for the addresses that will be searched
   # for matching address to court. Edit if court venue is based on 
@@ -1076,10 +1070,6 @@ review:
     button: |
       **Date of Service**:
       ${ service_date }
-  - Edit: users.signature_2
-    button: |
-      **users.signature_2**:
-      ${ users.signature_2 }
 resume button label: Continue interview
 ---
 continue button field: plaintiffs.revisit
@@ -1206,7 +1196,7 @@ progress: 100
 objects:
   - simpmotion_post_interview_instructions: ALDocument.using(title="Instructions", filename="simpmotion_next_steps.docx", enabled=True, has_addendum=False, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
   #for overflow, set has_addendum = True
-  - simpmotion_attachment: ALDocument.using(title="Motion and Notice of Hearing", filename="simpmotion.pdf", enabled=True, has_addendum=True, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
+  - simpmotion_attachment: ALDocument.using(title="Your Motion", filename="simpmotion.pdf", enabled=True, has_addendum=True, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
 ---
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[simpmotion_post_interview_instructions,simpmotion_attachment], filename="simpmotion.pdf_package.pdf", title="All forms to download for your records", enabled=True)
@@ -1324,7 +1314,10 @@ attachments:
       - "motion_body": ${ indent(indent(single_to_double_newlines(simpmotion_attachment.safe_value('motion_body', preserve_newlines=True)))) }
       - "signature_date": ${ signature_date }
       # It's a signature: test which file version this is; leave empty unless it's the final version)
-      - "users_signature_1": ${ users.signature_1 if i == 'final' else '' }
+      - "users_signature_1": |
+            % if esign == True:
+            ${ users[0] }
+            % else:
+            ${ '' }
+            % endif
       - "service_date": ${ service_date }
-      # It's a signature: test which file version this is; leave empty unless it's the final version)
-      - "users_signature_2": ${ users.signature_2 if i == 'final' else '' }
