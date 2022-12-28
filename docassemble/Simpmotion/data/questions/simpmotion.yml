@@ -52,7 +52,7 @@ code: |
 ---
   # overflow--sets default message
   code: |
-    AL_DEFAULT_OVERFLOW_MESSAGE = "  Please see attachment."
+    AL_DEFAULT_OVERFLOW_MESSAGE = "  [Please see attachment.]"
 ---
 code: |
   github_repo_name =  'docassemble-Simpmotion'
@@ -80,6 +80,17 @@ objects:
 code: |
   if users == defendants or users == respondents:
     other_parties.there_are_any = True
+---
+id: sets labels to use for parties in text
+code: |
+  if user_ask_role == 'plaintiff':
+    other_side_label = 'defendant or respondent'
+    other_side_label_plural = 'defendants or respondents'
+    user_label = 'plaintiff or petitioner'
+  elif user_ask_role == 'defendant':
+    other_side_label = 'plaintiff or petitioner'
+    other_side_label_plural = 'plaintiffs or petitioners'
+    user_label = 'defendant or respondent'
 ---
 sections:
   - review_simpmotion: Review your answers
@@ -112,22 +123,9 @@ code: |
   if approved_form == True:
     approved_form_exit
   speak_to_lawyer
-  docket_number
-  trial_court
-  # Bryce added below as placeholder to be replaced by something for Michigan courts later?
-  trial_court.name.text = "Trial Court"
-  #  trial_court.address.county#
-  #  court_type
-  #  set_progress(22)
-  #  trial_court.phone_number
-  county_choice
-  court_index
-  #calling value of the_court to load AL_court_loader object
-  the_court
-  # Below sets the user_role by asking a question.
-  # You can set user_role directly instead to either 'plaintiff' or 'defendant'
+  # Below sets the user_ask_role by asking a question.
   user_ask_role
-  # user_role
+  user_label
   set_progress(33)
   multiple_users
   if multiple_users==True:
@@ -142,6 +140,7 @@ code: |
     if multiple_users == False:
       defendants[0].address.address
       defendants[0].phone_number
+  review_screen_user_side
   # presents correct version of multiple_other_parties screen depending on user role
   if user_ask_role=='plaintiff':
     user_is_plaintiff_logic
@@ -175,14 +174,25 @@ code: |
     if multiple_other_parties == False and plaintiffs_attorney.target_number == 0:
       plaintiffs[0].address.address
       plaintiffs[0].phone_number
+  review_screen_other_side
   set_progress(55)
+  docket_number
+  # trial_court
+  # Bryce added below as placeholder to be replaced by something for Michigan courts later?
+  trial_court.name.text = "Trial Court"
+  #  trial_court.address.county#
+  #  court_type
+  #  set_progress(22)
+  #  trial_court.phone_number
+  county_choice
+  court_index
+  #calling value of the_court to load AL_court_loader object
+  the_court
   motion_title
   motion_body
   has_hearing_info
   if has_hearing_info == True:
     hearing_at_court
-    if hearing_at_court == False:
-      hearing_address_on_one_line
     hearing_time
     judge.name
     trial_court_bar_number
@@ -191,8 +201,9 @@ code: |
   set_progress(66)
   users.gather()
   set_parts(subtitle=str(users))
-  signature_date
   esign
+  if esign == True:
+    signature_date
   interview_order_simpmotion = True
 ---
 ###################### Main order ######################
@@ -205,7 +216,6 @@ code: |
   # al_intro_screen
   # simpmotion_intro
   interview_order_simpmotion
-  signature_date
   # Store anonymous data for analytics / statistics
   store_variables_snapshot(
       persistent=True,
@@ -393,7 +403,7 @@ continue button field: speak_to_lawyer
 ---
 id: what is the user s role?
 comment: |
-  This question is asked if the interview can be used by both a Plaintiff and a Defendant. It sets the value of `user_role`, `plaintiffs`, `defendants`, `petitioners` and `respondents`.  If you know your interview is exclusively used by the Plaintiff or Defendant, set `user_role = 'plaintiff'` or `user_role='defendant'` in your code.
+  This question is asked if the interview can be used by both a Plaintiff and a Defendant. It sets the value of `user_ask_role`, `plaintiffs`, `defendants`, `petitioners` and `respondents`.  If you know your interview is exclusively used by the Plaintiff or Defendant, set `user_ask_role = 'plaintiff'` or `user_ask_role='defendant'` in your code.
 question: |
   What party are you in your existing case?
 subquestion: |
@@ -467,7 +477,6 @@ content: |
 
   If you were the first person to file a form to start this case, you are the "Plaintiff" or the "Petitioner."  If someone else started this case by filing in court, you
   are the "Defendant" or the "Respondent." 
-
 ---
 sets:
   - other_parties[i].name.first
@@ -670,6 +679,8 @@ fields:
     maxlength: 25
   #  hide if: dont_know_docket_number
 ---
+if: |
+  has_hearing_info == True
 id: Judge information
 question: |
   What judge will hear your motion?
@@ -851,6 +862,8 @@ fields:
     rows: 12
     hint: Type your motion here.
     # maxlength: 1209 [took out maxlength because added overflow field]
+under: |  
+  **Careful!** If you click "Undo," you will lose what you have typed here.
 ---
 id: Do you know hearing time and place
 question: |
@@ -865,8 +878,17 @@ under: |
  **For most people, the answer will be no.**  
  
  Most people will get the judge and hearing information **after** they file this motion with the court.  We will give you more instructions when you finish this tool.
-yesno: has_hearing_info
+buttons:
+  - Yes:
+      code: |
+        has_hearing_info = True
+  - No:
+      code: |
+        has_hearing_info = False
+        undefine('judge.name', 'trial_court_bar_number', 'hearing_time', 'hearing_date', 'hearing_address_on_one_line')
 ---
+if: |
+  has_hearing_info == True
 id: When will the hearing be
 question: |
   When will the hearing be?
@@ -879,24 +901,42 @@ fields:
     datatype: time
     required: False
 ---
+if: |
+  has_hearing_info == True
 id: Will the hearing be held at the courthouse
 question: |
-  Will the hearing be held in person at the courthouse?
-yesno: hearing_at_court
----
- # if modifier is needed to make this work as followup question on review screen
-if: |
-  hearing_at_court == False
-id: What is the address for the hearing
-question: |
   Where will the hearing be?
-subquestion: |
-  * Type the address if it will be at a physical location.
-  * If the hearing will be online or by phone, briefly explain.
+# buttons:
+#  - Yes:
+#      code: |
+#        hearing_at_court = True
+#        undefine('hearing_address_on_one_line')
+#  - No:
+#      code: |
+#        hearing_at_court = False
 fields:
-  - "Address of the hearing": hearing_address_on_one_line
-    maxlength: 50
+  - "Will the hearing be in person at the courthouse?": hearing_at_court
+    datatype: yesnoradio
     required: False
+  - "* Type the address if it will be at a physical location. * If the hearing will be online or by phone, briefly explain.": hearing_address_on_one_line
+    show if: 
+      variable: hearing_at_court 
+      is: False  
+    maxlength: 50 
+# ---
+#  # if modifier is needed to make this work as followup question on review screen
+# if: |
+#   hearing_at_court == False
+# id: What is the address for the hearing
+# question: |
+#   Where will the hearing be?
+# subquestion: |
+#   * Type the address if it will be at a physical location.
+#   * If the hearing will be online or by phone, briefly explain.
+# fields:
+#   - "Address of the hearing": hearing_address_on_one_line
+#     maxlength: 50
+#     required: False
 ---
 id: OK Not to Have Hearing Info
 continue button field: no_hearing_info_ok
@@ -955,85 +995,165 @@ code: |
   # a different address than the user's
   addresses_to_search = [user.address for user in users]
 ---
-id: simpmotion review screen
+continue button field: review_screen_user_side
+id: review screen--user side of case
+question: |
+  Review your information
+review:
+  - note: |
+      **Your name**
+
+        * ${ users[0] }
+  - note: |        
+      **Your address**
+
+        * ${ users[0].address.block() }
+  - note: |        
+      **Your phone number**
+
+        * ${ phone_number_formatted(users[0].phone_number) }
+  - note: |
+      **Party Information**
+      
+        % if multiple_users == False:
+        * You are the **only** ${ user_label }.
+        % else:
+        * You are a ${ user_label }. 
+        * There is at least one other ${ user_label } on your side of the case.
+        % endif
+  - note: |
+      _____________________
+
+      **Check your answers before going on.**
+      
+      If any of this information is wrong, use the "Undo" button to go back and fix it now. Make sure these answers are correct before you continue.  
+---
+continue button field: review_screen_other_side
+id: review screen--other side of case
+question: |
+  Review the ${ (other_side_label) } information
+review:
+  - note: |
+      **Number of ${ other_side_label_plural }**
+      
+        % if other_parties.there_are_any == False:
+        * 0, There are no ${ other_side_label_plural } in the case.
+        % elif multiple_other_parties == False:
+        * 1, There is only one ${ other_side_label } in the case.
+        % elif multiple_other_parties == True:
+        * 2+, There are at least two ${ other_side_label_plural } in the case.
+        % endif
+  - note: |
+      **${ capitalize(other_side_label) }'s name**
+
+        * ${ other_parties[0] }
+  - note: |        
+      **${ other_parties[0] }'s address**
+
+        * ${ other_parties[0].address.block() }
+  - note: |        
+      **${ other_parties[0] }'s phone number**
+
+        * ${ phone_number_formatted(other_parties[0].phone_number) }
+  - note: |
+      **Number of ${ other_side_label } lawyers**
+      
+        % if defendants_attorney.target_number == 1 or plaintiffs_attorney.target_number == 1:
+        * 1, There is one ${ other_side_label } lawyer.
+        % elif defendants_attorney.target_number == 2 or plaintiffs_attorney.target_number == 2:
+        * 2+,  There are at least two ${ other_side_label } lawyers.
+        % else:
+        * 0, There are no ${ other_side_label } lawyers.
+        % endif
+    show if: other_parties.there_are_any == True
+  - note: |        
+      % if user_ask_role == 'defendant':
+      **Does this lawyer work for all the ${ other_side_label_plural }?**
+
+        * ${ capitalize(word(yesno(plaintiffs_share_lawyer))) }
+      % else:
+      **Does this lawyer work for all the ${ other_side_label_plural }?**
+
+        * ${ capitalize(word(yesno(defendants_share_lawyer))) }
+      % endif
+  - note: |
+      **Lawyer's name**
+      
+      % if user_ask_role == 'defendant':
+        * ${ plaintiffs_attorney[0]}
+      % else:
+        * ${ defendants_attorney[0]}
+      % endif
+  - note: |        
+      % if user_ask_role == 'defendant':
+      **${ plaintiffs_attorney[0]}'s address**
+
+        * ${ plaintiffs_attorney[0].address.block() }
+      % else:
+      **${ defendants_attorney[0]}'s address**
+
+        * ${ defendants_attorney[0].address.block() }
+      % endif
+  - note: |        
+      % if user_ask_role == 'defendant':
+      **${ plaintiffs_attorney[0]}'s phone number**
+
+        * ${ phone_number_formatted(plaintiffs_attorney[0].phone_number) }
+      % else:
+      **${ defendants_attorney[0]}'s phone number**
+
+        * ${ phone_number_formatted(defendants_attorney[0].phone_number) }
+      % endif
+  - note: |
+      _____________________
+
+      **Check your answers before going on.**
+      
+      If any of this information is wrong, use the "Undo" button to go back and fix it now. Make sure these answers are correct before you continue.  
+---
+id: simpmotion overall review screen
 event: review_simpmotion
 question: |
   Review your answers
 review:
-  - Edit: docket_number
-    button: |
-      **Case number**:
-      ${ docket_number }  
-  - Edit: trial_court
-    button: |
-      **Trial Court Information**
+  - note: |        
+      **Party Information**
       
-      * Trial court name: ${ the_court }
-      % if defined("trial_court.address.county"):
-      * County: ${ trial_court.address.county }
+      * If you need to edit the party information, start over or use the "Undo" button to go back. 
+      % if defined("motion_body"):
+        Make sure you save your motion somewhere else first, so you don't lose your work. 
       % endif
-      % if defined("trial_court.circuit"):
-      * Circuit Court Number: ${ trial_court.circuit }
-      % endif
-      % if defined("trial_court.district"):
-      * District Court Number: ${ trial_court.district }
-      % endif
-      % if defined("trial_court.address"):
-      * Address: ${ trial_court.address.block() }
-      % endif
-      % if defined("the_court.phone_number"):
-      * Phone number: ${ phone_number_formatted(the_court.phone_number) }
-      % endif
-  - Edit: plaintiffs.revisit
-    button: |
-      **Plaintiffs**
-
-      % for item in plaintiffs:
-        * ${ item }
-      % endfor
-  - Edit: defendants.revisit
-    button: |
-      **Defendants**
-
-      % for item in defendants:
-        * ${ item }
-      % endfor
-  - Edit: plaintiffs_attorney_bar_number
-    button: |
-      **Plaintiff\'s or Petitioner\'s attorney\'s bar number**:
-      ${ plaintiffs_attorney_bar_number }
-  - Edit: plaintiffs_attorney.revisit
-    button: |
-      **Plaintiffs attorney**
-
-      % for item in plaintiffs_attorney:
-        * ${ item }
-      % endfor
-  - Edit: defendants_attorney.revisit
-    button: |
-      **Defendants attorney**
-
-      % for item in defendants_attorney:
-        * ${ item }
-      % endfor
-  - Edit: defendants_attorney_bar_number
-    button: |
-      **Defendant\'s or Respondent\'s attorney\'s bar number**:
-      ${ defendants_attorney_bar_number }
   - Edit: 
-      - hearing_date
-      - hearing_time
-      - judge.name
-      - trial_court_bar_number 
-      - hearing_at_court
-      - follow up:
-        - hearing_address_on_one_line
+      - docket_number
+      - county_choice
+      - court_index
+      - recompute:
+          - the_court
     button: |
-      **Hearing Information**:
+      **Court Case Information**
       
+      * **County**:
+      ${ county_choice }
+      * **Court**:
+      ${ the_court.name }
+      * **Case number**:
+      ${ docket_number }  
+  - Edit: 
+      - has_hearing_info
+      - follow up:   
+        - hearing_date
+        - hearing_time
+        - judge.name
+        - trial_court_bar_number 
+        - hearing_at_court
+    button: |
+      **Hearing Information**
+
+      * Do you already have the time, place, and judge for the hearing?
+      ${ word(yesno(has_hearing_info)) }
       % if defined("hearing_date"):
       * Hearing Date: ${ hearing_date }
-      % endif
+      % endif#
       % if defined("hearing_time"):
       * Hearing Time: ${ hearing_time }
       % endif
@@ -1056,123 +1176,20 @@ review:
       * **Title**: ${ motion_title }
       % endif
       % if defined("motion_body"):
-      * > ${ motion_body }
+      * ${ indent(single_to_double_newlines(motion_body)) } 
       % endif
-  - Edit: signature_date
+  - Edit: 
+      - esign
     button: |
-      **Date of signature**:
-      ${ signature_date }
-  - Edit: users.signature_1
-    button: |
-      **users.signature_1**:
-      ${ users.signature_1 }
-  - Edit: service_date
-    button: |
-      **Date of Service**:
-      ${ service_date }
+      **Your Electronic Signature**:
+        
+      * **Do you want to E-Sign these forms?**
+      % if esign == True:
+      Yes
+      % else:
+      No
+      % endif
 resume button label: Continue interview
----
-continue button field: plaintiffs.revisit
-question: |
-  Edit plaintiffs
-subquestion: |
-  ${ plaintiffs.table }
-
-  ${ plaintiffs.add_action() }
----
-table: plaintiffs.table
-rows: plaintiffs
-columns:
-  - Name: |
-      row_item.name.full() if defined("row_item.name.first") else ""
-edit:
-  - name.first
-confirm: True
-
----
-continue button field: defendants.revisit
-question: |
-  Edit defendants
-subquestion: |
-  ${ defendants.table }
-
-  ${ defendants.add_action() }
----
-table: defendants.table
-rows: defendants
-columns:
-  - Name: |
-      row_item.name.full() if defined("row_item.name.first") else ""
-edit:
-  - name.first
-confirm: True
-
----
-continue button field: plaintiffs_attorney.revisit
-question: |
-  Edit plaintiffs_attorney
-subquestion: |
-  ${ plaintiffs_attorney.table }
-
-  ${ plaintiffs_attorney.add_action() }
----
-table: plaintiffs_attorney.table
-rows: plaintiffs_attorney
-columns:
-  - Name: |
-      row_item.name.full() if defined("row_item.name.first") else ""
-  - Address: |
-      row_item.address.block() if defined("row_item.address") else ""
-  - Phone number: |
-      phone_number_formatted(row_item.phone_number) if defined("row_item.phone_number") else ""
-edit:
-  - name.first
-  - address.address
-  - phone_number
-confirm: True
-
----
-continue button field: defendants_attorney.revisit
-question: |
-  Edit defendants_attorney
-subquestion: |
-  ${ defendants_attorney.table }
-
-  ${ defendants_attorney.add_action() }
----
-table: defendants_attorney.table
-rows: defendants_attorney
-columns:
-  - Name: |
-      row_item.name.full() if defined("row_item.name.first") else ""
-  - Address: |
-      row_item.address.block() if defined("row_item.address") else ""
-  - Phone number: |
-      phone_number_formatted(row_item.phone_number) if defined("row_item.phone_number") else ""
-edit:
-  - name.first
-  - address.address
-  - phone_number
-confirm: True
-
----
-continue button field: users.revisit
-question: |
-  Edit users
-subquestion: |
-  ${ users.table }
-
-  ${ users.add_action() }
----
-table: users.table
-rows: users
-columns:
-  - Name: |
-      row_item.name.full() if defined("row_item.name.first") else ""
-edit:
-  - name.first
-confirm: True
-
 ---
 id: download simpmotion
 event: simpmotion_download
@@ -1312,7 +1329,12 @@ attachments:
       - "hearing_address_on_one_line": ${ hearing_address_on_one_line }
       # inserts only the "safe" number of characters here, seems to be set via the trigger value, formatting
       - "motion_body": ${ indent(indent(single_to_double_newlines(simpmotion_attachment.safe_value('motion_body', preserve_newlines=True)))) }
-      - "signature_date": ${ signature_date }
+      - "signature_date": |
+            % if esign == True:
+            ${ signature_date }
+            % else:
+            ${ '' }
+            % endif
       # It's a signature: test which file version this is; leave empty unless it's the final version)
       - "users_signature_1": |
             % if esign == True:
