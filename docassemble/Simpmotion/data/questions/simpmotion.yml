@@ -245,6 +245,8 @@ subquestion: |
   
   This tool does not cover all situations. If you find this tool is not right for you, use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to search for a lawyer or legal services in your area.
   
+  If you want to go back to an interview you started before, make sure you are logged in. Then go to the menu at the top of the screen and select "My Interviews"
+  
   Tap the {green words} in any screen for a definition or more information.
 terms:
   green words: |
@@ -271,7 +273,9 @@ id: Navigation and Saving Your Form
 question: |
   Navigation and Saving Your Form
 subquestion: |
-  If you make a mistake at any time or want to review your answers, use the Undo button below. You can see your earlier answers by clicking on the "Review your answers" button [**Note this is not really working yet for most of the interview**]. If you can't finish today, you can save your answers by creating a username and password. This lets you log back into the site later and finish, or go back and change any of your answers. 
+  If you make a mistake at any time, you can use the Undo button below to go back. You can also see and edit some of your earlier answers by clicking on the "Review your answers" button. If you can't finish today, you can save your answers by creating a username and password. This lets you log back into the site later and finish, or go back and change any of your answers. 
+  
+  If you want to go back to an interview you started before, make sure you are logged in. Then go to the menu at the top of the screen and select “My Interviews”
   
   Make note of your username and password.
 continue button field: navigation_and_saving
@@ -855,7 +859,7 @@ subquestion: |
   * **Do your best to understand what rules the judge will follow when deciding your motion**. For example, if the law says that the judge can grant a motion in your case if you show a change in circumstances, be sure to explain the change in circumstances. If the court rules say you must show good cause, explain the good cause. It is a good idea to use those specific words. For example, if you need to show good cause, say “There is good cause because…”
   * **Do not include any personal identifying information**. Personal identifying information includes: date of birth, social security or national identification number, driver’s license or state identification number, passport number, and financial account numbers. If a court rule or law requires you to include this information or if the information is necessary for identification purposes you must fill out form [MC 97](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97.pdf) (if the information is related to a defendant, respondent, or decedent) or form [MC 97a](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97a.pdf) (if the information is about a plaintiff, petitioner, or anyone else not included in MC 97). Include the information on MC 97 and do not include it in the Motion. Instead, include a reference in the Motion to ask the judge to see MC 97 for the information.
   
-  Use the space below to tell the judge what you want and to give reasons for it. This tool will not automatically save your work. If you will need to spend some time writing you may want to create an account and save your work a few times as you write. If you want to save your answers [insert language about how to save answers here]
+  Use the space below to tell the judge what you want and to give reasons for it. If you can't finish writing what you want to say right now, go to the menu at the top of the screen and click "Sign up or sign in to save answers".  If you are already signed in, click "Next" to save your work. 
 fields:
   - "Your motion": motion_body
     input type: area
@@ -1011,7 +1015,7 @@ review:
   - note: |        
       **Your phone number**
 
-        * ${ phone_number_formatted(users[0].phone_number) }
+        * ${ users[0].phone_number }
   - note: |
       **Party Information**
       
@@ -1019,7 +1023,7 @@ review:
         * You are the **only** ${ user_label }.
         % else:
         * You are a ${ user_label }. 
-        * There is at least one other ${ user_label } on your side of the case.
+        * There is at least one other ${ user_label } in the case.
         % endif
   - note: |
       _____________________
@@ -1054,7 +1058,7 @@ review:
   - note: |        
       **${ other_parties[0] }'s phone number**
 
-        * ${ phone_number_formatted(other_parties[0].phone_number) }
+        * ${ other_parties[0].phone_number }
   - note: |
       **Number of ${ other_side_label } lawyers**
       
@@ -1098,11 +1102,11 @@ review:
       % if user_ask_role == 'defendant':
       **${ plaintiffs_attorney[0]}'s phone number**
 
-        * ${ phone_number_formatted(plaintiffs_attorney[0].phone_number) }
+        * ${ plaintiffs_attorney[0].phone_number }
       % else:
       **${ defendants_attorney[0]}'s phone number**
 
-        * ${ phone_number_formatted(defendants_attorney[0].phone_number) }
+        * ${ defendants_attorney[0].phone_number }
       % endif
   - note: |
       _____________________
@@ -1258,7 +1262,7 @@ attachments:
       - "trial_court_county": ${ the_court.address.county }
       - "docket_number": ${ docket_number }
       - "trial_court_address_on_one_line": ${ the_court.address.on_one_line() }
-      - "trial_court_phone_number": ${ phone_number_formatted(the_court.phone) }
+      - "trial_court_phone_number": ${ the_court.phone }
       # removes plaintiff from header if there are multiple user plaintiffs, if plaintiff not user,         won't collect plaintiff name anyway
       - "plaintiffs_name": |
             % if user_ask_role == 'plaintiff' and multiple_users == True:
@@ -1308,15 +1312,15 @@ attachments:
             % endif     
       - "plaintiffs_attorney_phone_number": |
             % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
-            ${ phone_number_formatted(plaintiffs_attorney[0].phone_number) }
+            ${ plaintiffs_attorney[0].phone_number }
             % else:
-            ${ phone_number_formatted(plaintiffs[0].phone_number) }
+            ${ plaintiffs[0].phone_number }
             % endif
       - "defendants_attorney_phone_number": |
             % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
-            ${ phone_number_formatted(defendants_attorney[0].phone_number) }
+            ${ defendants_attorney[0].phone_number }
             % else:
-            ${ phone_number_formatted(defendants[0].phone_number) }
+            ${ defendants[0].phone_number }
             % endif
       - "motion_title": ${ motion_title }
       - "users_name": ${ users[0] }
