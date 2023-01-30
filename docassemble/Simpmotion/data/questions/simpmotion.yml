@@ -1144,25 +1144,29 @@ review:
       ${ docket_number }  
   - Edit: 
       - has_hearing_info
-      - follow up:   
+      - recompute:
+          - has_hearing_info
+      - follow up:
         - hearing_date
         - hearing_time
+        - hearing_at_court
         - judge.name
         - trial_court_bar_number 
-        - hearing_at_court
     button: |
       **Hearing Information**
 
       * Do you already have the time, place, and judge for the hearing?
       ${ word(yesno(has_hearing_info)) }
+  - Edit: 
+      - hearing_date
+      - hearing_time
+      - hearing_at_court
+    button: |
       % if defined("hearing_date"):
       * Hearing Date: ${ hearing_date }
-      % endif#
+      % endif
       % if defined("hearing_time"):
       * Hearing Time: ${ hearing_time }
-      % endif
-      % if defined("judge.name"):
-      * Judge: ${ judge.name }
       % endif
       % if defined("hearing_at_court"):
       * Will the hearing be at the courthouse? ${ word(yesno(hearing_at_court)) }
@@ -1170,6 +1174,16 @@ review:
       % if defined("hearing_address_on_one_line"):
       * Hearing Place: ${ hearing_address_on_one_line }
       % endif 
+  - Edit: 
+      - judge.name
+      - trial_court_bar_number 
+    button: |
+      % if defined("judge.name"):
+      * Judge: ${ judge.name }
+      % endif
+      % if defined("trial_court_bar_number"): 
+      * Judge's Bar Number: ${ trial_court_bar_number }
+      % endif
   - Edit: 
       - motion_title
       - motion_body
