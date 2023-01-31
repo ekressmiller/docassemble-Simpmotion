@@ -889,7 +889,7 @@ buttons:
   - No:
       code: |
         has_hearing_info = False
-        undefine('judge.name', 'trial_court_bar_number', 'hearing_time', 'hearing_date', 'hearing_address_on_one_line')
+        undefine('judge.name', 'trial_court_bar_number', 'hearing_time', 'hearing_date', 'hearing_at_court', 'hearing_address_on_one_line')
 ---
 if: |
   has_hearing_info == True
@@ -1155,40 +1155,45 @@ review:
     button: |
       **Hearing Information**
 
-      * Do you already have the time, place, and judge for the hearing?
-      ${ word(yesno(has_hearing_info)) }
+      * Do you already have the time, place, and judge for the hearing?---**${ word(yesno(has_hearing_info)) }**
   - Edit: 
       - hearing_date
       - hearing_time
       - hearing_at_court
     button: |
+      **Hearing Time and Place**
+      
       % if defined("hearing_date"):
-      * Hearing Date: ${ hearing_date }
+      * **Hearing Date**: ${ hearing_date }
       % endif
       % if defined("hearing_time"):
-      * Hearing Time: ${ hearing_time }
+      * **Hearing Time**: ${ format_time(hearing_time) }
       % endif
       % if defined("hearing_at_court"):
-      * Will the hearing be at the courthouse? ${ word(yesno(hearing_at_court)) }
+      * Will the hearing be at the courthouse?---**${ word(yesno(hearing_at_court)) }**
       % endif 
       % if defined("hearing_address_on_one_line"):
-      * Hearing Place: ${ hearing_address_on_one_line }
+      % if hearing_at_court == False:
+      * **Hearing Place**: ${ hearing_address_on_one_line }
+      % endif
       % endif 
   - Edit: 
       - judge.name
       - trial_court_bar_number 
     button: |
+      **Judge for the Hearing**
+      
       % if defined("judge.name"):
-      * Judge: ${ judge.name }
+      * **Judge**: ${ judge.name }
       % endif
       % if defined("trial_court_bar_number"): 
-      * Judge's Bar Number: ${ trial_court_bar_number }
+      * **Judge's Bar Number**: ${ trial_court_bar_number }
       % endif
   - Edit: 
       - motion_title
       - motion_body
     button: |
-      **Your Motion**:
+      **Your Motion**
       
       % if defined("motion_title"):
       * **Title**: ${ motion_title }
@@ -1199,13 +1204,13 @@ review:
   - Edit: 
       - esign
     button: |
-      **Your Electronic Signature**:
+      **Your Electronic Signature**
         
-      * **Do you want to E-Sign these forms?**
+      * Do you want to E-Sign these forms?---
       % if esign == True:
-      Yes
+      **Yes**
       % else:
-      No
+      **No**
       % endif
 resume button label: Continue interview
 ---
@@ -1344,7 +1349,10 @@ attachments:
       - "hearing_date": ${ format_date(hearing_date) }
       - "hearing_at_court_yes": ${ hearing_at_court }
       - "hearing_at_court_no": ${ not hearing_at_court }
-      - "hearing_address_on_one_line": ${ hearing_address_on_one_line }
+      - "hearing_address_on_one_line": |
+            % if hearing_at_court == False:
+            ${ hearing_address_on_one_line }
+            % endif
       # inserts only the "safe" number of characters here, seems to be set via the trigger value, formatting
       - "motion_body": ${ indent(indent(single_to_double_newlines(simpmotion_attachment.safe_value('motion_body', preserve_newlines=True)))) }
       - "signature_date": |
