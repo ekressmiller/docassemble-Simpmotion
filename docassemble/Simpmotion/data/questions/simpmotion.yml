@@ -52,7 +52,7 @@ code: |
 ---
   # overflow--sets default message
   code: |
-    AL_DEFAULT_OVERFLOW_MESSAGE = "  [Please see attachment.]"
+    AL_DEFAULT_OVERFLOW_MESSAGE = " [PLEASE SEE ATTACHMENT.]"
 ---
 code: |
   github_repo_name =  'docassemble-Simpmotion'
@@ -378,7 +378,7 @@ id: Check for SCAO Approved Forms
 question: |
   Check for SCAO-Approved Forms
 subquestion: |
-  The State Court Administrative Office (SCAO) has court forms for some kinds of motions. Follow this [link to the list of SCAO-approved forms](https://www.courts.michigan.gov/SCAO-forms/) to find out if they have a form for the kind of request you need in your case. 
+  The State Court Administrative Office (SCAO) has court forms for some kinds of motions. Follow this [link to the list of SCAO-approved forms](https://www.courts.michigan.gov/SCAO-forms/#Index) to find out if they have a form for the kind of request you need in your case. 
   
   Did you find a form that applies to your case?
 yesno: approved_form
@@ -902,8 +902,9 @@ fields:
     required: False
     min: ${ today() }
   - "Hearing Time": hearing_time
-    datatype: time
+    maxlength: 13
     required: False
+    #removed "time" datatype due to failure on some older Androids and weird interface.
 ---
 if: |
   has_hearing_info == True
@@ -1167,7 +1168,7 @@ review:
       * **Hearing Date**: ${ hearing_date }
       % endif
       % if defined("hearing_time"):
-      * **Hearing Time**: ${ format_time(hearing_time) }
+      * **Hearing Time**: ${ hearing_time }
       % endif
       % if defined("hearing_at_court"):
       * Will the hearing be at the courthouse?---**${ word(yesno(hearing_at_court)) }**
@@ -1249,7 +1250,7 @@ attachment:
 ---
 code: |
   # overflow--sets character limit, addendum label, etc.
-  simpmotion_attachment.overflow_fields['motion_body'].overflow_trigger=900
+  simpmotion_attachment.overflow_fields['motion_body'].overflow_trigger=850
   simpmotion_attachment.overflow_fields['motion_body'].label = "Motion (continued)"
   simpmotion_attachment.overflow_fields.gathered=True
 ---
@@ -1344,7 +1345,7 @@ attachments:
       - "motion_title": ${ motion_title }
       - "users_name": ${ users[0] }
       - "trial_court_name": ${ judge.name }
-      - "hearing_time": ${ format_time(hearing_time) }
+      - "hearing_time": ${ hearing_time }
       - "trial_court_bar_number": ${ trial_court_bar_number }
       - "hearing_date": ${ format_date(hearing_date) }
       - "hearing_at_court_yes": ${ hearing_at_court }
