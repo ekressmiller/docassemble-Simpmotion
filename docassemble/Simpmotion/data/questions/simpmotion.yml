@@ -73,8 +73,7 @@ objects:
   - trial_court: Organization
   - judge: ALPeopleList.using(ask_number=True,target_number=1)
   # telling interview to look to mlhframework package for source spreadsheet
-  - court_list: ALCourtLoader.using(file_name='docassemble.mlhframework:data/sources/court_sample.xlsx')
-
+  - court_list: ALCourtLoader.using(file_name='docassemble.mlhframework:data/sources/michigan_court_info.xlsx')
 ---
  # assumes there is a plaintiff/petitioner if user is defendant/respondent
 code: |
@@ -161,13 +160,13 @@ code: |
   if other_parties.there_are_any == True:
     defendants_attorney.target_number
     if defendants_attorney.target_number == 1:
-      if defendants.target_number == 1 or defendants_share_lawyer == True:
+      if multiple_other_parties == False or defendants_share_lawyer == True:
         defendants_attorney.gather()
         defendants_attorney[0].phone_number
         defendants_attorney[0].address.address
         defendants_attorney_bar_number  
   if user_ask_role == 'plaintiff':
-    if defendants.target_number > 0 and multiple_other_parties == False and defendants_attorney.target_number == 0:
+    if other_parties.there_are_any == True and multiple_other_parties == False and defendants_attorney.target_number == 0:
       defendants[0].address.address
       defendants[0].phone_number
   else:
@@ -618,7 +617,16 @@ fields:
       - Yes, they have multiple lawyers.: 2
     show if: 
       code: |  
-        users == plaintiffs
+        users == plaintiffs and multiple_other_parties == True
+  - no label: defendants_attorney.target_number
+    input type: radio
+    datatype: integer
+    choices:
+      - No, they don't have a lawyer.: 0
+      - Yes, they have a lawyer.: 1
+    show if: 
+      code: |  
+        users == plaintiffs and multiple_other_parties == False
   - no label: plaintiffs_attorney.target_number
     input type: radio
     datatype: integer
@@ -628,7 +636,16 @@ fields:
       - Yes, they have multiple lawyers.: 2
     show if: 
       code: |  
-        users == defendants
+        users == defendants and multiple_other_parties == True
+  - no label: plaintiffs_attorney.target_number
+    input type: radio
+    datatype: integer
+    choices:
+      - No, they don't have a lawyer.: 0
+      - Yes, they have a lawyer.: 1
+    show if: 
+      code: |  
+        users == defendants and multiple_other_parties == False
   - note: |
       NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to include more than one lawyer, you will need to write them in neatly yourself.  
     show if:
