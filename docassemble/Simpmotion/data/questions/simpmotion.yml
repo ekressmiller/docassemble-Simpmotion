@@ -1282,7 +1282,7 @@ attachments:
     variable name: simpmotion_attachment[i]        
     skip undefined: True
     pdf template file: simpmotion.pdf
-    # editable: False
+    editable: False
     fields:
       - "trial_court_circuit": |
             % if the_court.type == 'circuit':
