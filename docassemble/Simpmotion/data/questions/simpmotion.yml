@@ -42,14 +42,6 @@ data:
 code: |
   interview_metadata['main_interview_key'] =  'simpmotion'
 ---
-code: |
-  # This controls the default country and list of states in address field questions
-  AL_DEFAULT_COUNTRY = "US"
----
-code: |
-  # This controls the default state in address field questions
-  AL_DEFAULT_STATE = "MI"
----
   # overflow--sets default message
   code: |
     AL_DEFAULT_OVERFLOW_MESSAGE = " [PLEASE SEE ATTACHMENT.]"
@@ -122,25 +114,20 @@ code: |
   if approved_form == True:
     approved_form_exit
   speak_to_lawyer
-  # Below sets the user_ask_role by asking a question.
   user_ask_role
   user_label
-  set_progress(33)
+  set_progress(22)
   multiple_users
   if multiple_users==True:
     multiple_users_warning
   users.gather()
   # this interview already tells us to assume user has no attorney, so presuming that here too
-  if user_ask_role == 'plaintiff':
-    if multiple_users == False:
-      plaintiffs[0].address.address
-      plaintiffs[0].phone_number
-  else:
-    if multiple_users == False:
-      defendants[0].address.address
-      defendants[0].phone_number
+  if multiple_users == False:
+    users[0].address.address
+    users[0].phone_number
   review_screen_user_side
   # presents correct version of multiple_other_parties screen depending on user role
+  set_progress(33)
   if user_ask_role=='plaintiff':
     user_is_plaintiff_logic
   else:
@@ -165,6 +152,7 @@ code: |
         defendants_attorney[0].phone_number
         defendants_attorney[0].address.address
         defendants_attorney_bar_number  
+  set_progress(55)
   if user_ask_role == 'plaintiff':
     if other_parties.there_are_any == True and multiple_other_parties == False and defendants_attorney.target_number == 0:
       defendants[0].address.address
@@ -174,19 +162,16 @@ code: |
       plaintiffs[0].address.address
       plaintiffs[0].phone_number
   review_screen_other_side
-  set_progress(55)
+  set_progress(66)
   docket_number
   # trial_court
   # Bryce added below as placeholder to be replaced by something for Michigan courts later?
   trial_court.name.text = "Trial Court"
-  #  trial_court.address.county#
-  #  court_type
-  #  set_progress(22)
-  #  trial_court.phone_number
   county_choice
   court_index
   #calling value of the_court to load AL_court_loader object
   the_court
+  set_progress(77)
   motion_title
   motion_body
   has_hearing_info
@@ -197,7 +182,7 @@ code: |
     trial_court_bar_number
   if has_hearing_info == False:
     no_hearing_info_ok
-  set_progress(66)
+  set_progress(88)
   users.gather()
   set_parts(subtitle=str(users))
   esign

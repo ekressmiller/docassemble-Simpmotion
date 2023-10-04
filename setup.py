@@ -44,17 +44,17 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.Simpmotion',
-      version='1.3',
+      version='1.4',
       description=('Motion and Notice of Hearing'),
       long_description='# docassemble.Simpmotion\r\n\r\nMotion and Notice of Hearing\r\n\r\n## Author\r\n\r\nMichigan Legal Help\r\n\r\n',
       long_description_content_type='text/markdown',
       author='Michigan Legal Help',
       author_email='ekressmiller@mplp.org',
       license='The MIT License',
-      url='https://courtformsonline.org',
+      url='https://michiganlegalhelp.org',
       packages=find_packages(),
       namespace_packages=['docassemble'],
-      install_requires=['docassemble.AssemblyLine>=2.24.0', 'docassemble.mlhframework'],
+      install_requires=['docassemble.AssemblyLine>=2.26.0', 'docassemble.mlhframework'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/Simpmotion/', package='docassemble.Simpmotion'),
      )
