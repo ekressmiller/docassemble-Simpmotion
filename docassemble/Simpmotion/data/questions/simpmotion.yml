@@ -41,13 +41,23 @@ objects:
   #default way to gather is by asking are there any, and then is there another, so if don't say anything it just does that.  Adding ".using(ask_number=True)" makes it ask for number instead.  Must then set target number somewhere.  
   # https://suffolklitlab.org/legal-tech-class/docs/repeated-information
   - users: ALPeopleList.using(auto_gather=True, complete_attribute="completed")
-  - other_parties: ALPeopleList.using(auto_gather=True, complete_attribute="completed")
-  - defendants_attorney: ALPeopleList.using(ask_number=True)
-  - plaintiffs_attorney: ALPeopleList.using(ask_number=True)
+  - other_parties: ALPeopleList.using(auto_gather=True, ask_number=True, complete_attribute="completed")
+  - other_party_attorney: ALPeopleList.using(ask_number=True, auto_gather=True)
   - trial_court: Organization
   - judge: ALPeopleList.using(ask_number=True,target_number=1)
   # telling interview to look to mlhframework package for source spreadsheet
   - court_list: ALCourtLoader.using(file_name='docassemble.mlhframework:data/sources/michigan_court_info.xlsx')
+---
+if: i > 0
+code: |
+  # Edit button will automatically try to fill in this info, that we don't actually need
+  users[i].address.address = ""
+  users[i].phone_number = ""
+---
+if: i > 0
+code: |
+  other_parties[i].address.address = ""
+  other_parties[i].phone_number = ""
 ---
 code: |
   users[i].name.first
@@ -55,20 +65,32 @@ code: |
     users[i].address.address
     users[i].phone_number
   else:
-    # Edit button will automatically try to fill in this info, that we don't actually need
     users[i].address.address = ""
     users[i].phone_number = ""
   users[i].completed = True
 ---
 code: |
   other_parties[i].name.first
-  if i == 0 and len(defendants_attorney) == 0:
-    other_parties[i].address.address
-    other_parties[i].phone_number
-  else:
-    other_parties[i].address.address = ""
-    other_parties[i].phone_number = ""
   other_parties[i].completed = True
+---
+code: |
+  other_party_attorney[i].name.first
+  other_party_attorney[i].phone_number
+  other_party_attorney[i].address.address
+  other_party_attorney[i].bar_number
+---
+if: len(other_parties) == 0
+code: |
+    other_party_attorney.target_number = 0
+---
+# assumes the user has no attorney
+code: |
+  if user_started_case:
+    plaintiffs_attorney = DAEmpty('plaintiffs_attorney')
+    defendants_attorney = other_party_attorney
+  else:
+    defendants_attorney = DAEmpty('defendants_attorney')
+    plaintiffs_attorney = other_party_attorney
 ---
  # assumes there is a plaintiff/petitioner if user is defendant/respondent
 code: |
@@ -122,36 +144,13 @@ code: |
   review_screen_user_side
   # presents correct version of multiple_other_parties screen depending on user role
   set_progress(33)
-  if user_ask_role=='plaintiff':
-    user_is_plaintiff_logic
-  else:
-    user_is_defendant_logic
   other_parties.gather()
-  plaintiffs_attorney.target_number
-  if plaintiffs_attorney.target_number == 1:
-    if plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True:
-      plaintiffs_attorney.gather()
-      plaintiffs_attorney[0].phone_number
-      plaintiffs_attorney[0].address.address
-      plaintiffs_attorney_bar_number
+  other_party_attorney.gather()
   set_progress(44)
-  if other_parties.there_are_any == True:
-    defendants_attorney.target_number
-    if defendants_attorney.target_number == 1:
-      if defendants_share_lawyer == True:
-        defendants_attorney.gather()
-        defendants_attorney[0].phone_number
-        defendants_attorney[0].address.address
-        defendants_attorney_bar_number  
   set_progress(55)
-  if user_ask_role == 'plaintiff':
-    if other_parties.there_are_any == True and defendants_attorney.target_number == 0:
-      defendants[0].address.address
-      defendants[0].phone_number
-  else:
-    if len(plaintiffs_attorney) == 0:
-      plaintiffs[0].address.address
-      plaintiffs[0].phone_number
+  if len(other_parties) > 0 and len(other_party_attorney) == 0:
+    other_parties[0].address.address
+    other_parties[0].phone_number
   review_screen_other_side
   set_progress(66)
   docket_number
@@ -177,6 +176,10 @@ code: |
   set_parts(subtitle=str(users))
   if esign == True:
     signature_date
+  plaintiffs
+  defendants
+  plaintiffs_attorney
+  defendants_attorney
   interview_order_simpmotion = True
 ---
 ###################### Main order ######################
@@ -463,37 +466,29 @@ sets:
 id: names of opposing parties
 question: |
   % if users==plaintiffs:
-  Name of defendant or respondent
+  What is the name of the ${ ordinal(i) } defendant or respondent?
   % else:
-  Name of plaintiff or petitioner
+  What is the name of the ${ ordinal(i) } plaintiff or petitioner?
   % endif
 fields:
   - code: |
       other_parties[i].name_fields(person_or_business='unsure')
 ---
 sets:
-  - plaintiffs_attorney[i].name.first
-  - plaintiffs_attorney[i].name.last
-  - plaintiffs_attorney[i].name.middle
-  - plaintiffs_attorney[i].name.suffix
-id: names of plaintiff s attorney
-question: |
-  Name of plaintiff or petitioner lawyer
-fields:
-  - code: |
-      plaintiffs_attorney[i].name_fields()
----
-sets:
-  - defendants_attorney[i].name.first
-  - defendants_attorney[i].name.last
-  - defendants_attorney[i].name.middle
-  - defendants_attorney[i].name.suffix
+  - other_party_attorney[i].name.first
+  - other_party_attorney[i].name.last
+  - other_party_attorney[i].name.middle
+  - other_party_attorney[i].name.suffix
 id: names of defendant s attorney
 question: |
+  % if user_started_case:
   Name of defendant or respondent lawyer
+  % else:
+  Name of plaintiff or petitioner lawyer
+  % endif
 fields:
   - code: |
-      defendants_attorney[i].name_fields()
+      other_party_attorney[i].name_fields()
 ---
  # commented out because using different gather method now
  # id: any other users
@@ -559,54 +554,25 @@ fields:
  #       code: |  
  #         users == defendants
  # ---
-if: users==plaintiffs
 id: other party has attorney
 question: |
+  % if user_started_case:
   % if len(other_parties.complete_elements()) > 1:
   Do the defendants or respondents have a lawyer?
   % else:
   Does the defendant or respondent have a lawyer?
   % endif
-subquestion: |
-  This information would be on court documents you have from the case. Look at the most recent document you have to get the most up-to-date information. A party can hire a lawyer at any point in the case.
-fields:
-  - no label: defendants_attorney.target_number
-    input type: radio
-    datatype: integer
-    choices:
-      - No, they don't have a lawyer.: 0
-      - Yes, they have 1 lawyer.: 1
-      - Yes, they have multiple lawyers.: 2
-    show if: 
-      code: |  
-        len(other_parties) > 1
-  - no label: defendants_attorney.target_number
-    input type: radio
-    datatype: integer
-    choices:
-      - No, they don't have a lawyer.: 0
-      - Yes, they have a lawyer.: 1
-    show if: 
-      code: |  
-        len(other_parties) <= 1
-  - note: |
-      NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to include more than one lawyer, you will need to write them in neatly yourself.  
-    show if:
-      variable: defendants_attorney.target_number
-      is: 2
----
-if: users == defendants
-id: other party has attorney
-question: |
+  % else:
   % if len(other_parties.complete_elements()) > 1:
   Do the plaintiffs or petitioners have a lawyer?
   % else:
   Does the plaintiff or petitioner have a lawyer?
   % endif
+  % endif
 subquestion: |
   This information would be on court documents you have from the case. Look at the most recent document you have to get the most up-to-date information. A party can hire a lawyer at any point in the case.
 fields:
-  - no label: plaintiffs_attorney.target_number
+  - no label: other_party_attorney.target_number
     input type: radio
     datatype: integer
     choices:
@@ -616,7 +582,7 @@ fields:
     show if: 
       code: |  
         len(other_parties) > 1
-  - no label: plaintiffs_attorney.target_number
+  - no label: other_party_attorney.target_number
     input type: radio
     datatype: integer
     choices:
@@ -628,14 +594,14 @@ fields:
   - note: |
       NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to include more than one lawyer, you will need to write them in neatly yourself.  
     show if:
-      variable: plaintiffs_attorney.target_number
+      variable: other_party_attorney.target_number
       is: 2
 ---
 id: lawyer is shared by all plaintiffs
 question: |
   Do all the plaintiffs or petitioners share the same lawyer?
 fields:
-  - no label: plaintiffs_share_lawyer
+  - no label: other_party_share_lawyer
     datatype: radio
     choices:
       - No, the lawyer only represents some of them.: False
@@ -643,14 +609,14 @@ fields:
   - note: |
       Because they do not all share the same lawyer, you will need to write the lawyer's information on the form yourself. We will give you instructions.
     show if:
-      variable: plaintiffs_share_lawyer
+      variable: other_party_share_lawyer
       is: False
 ---
 id: lawyer is shared by all defendants
 question: |
   Do all the defendants or respondents all share the same lawyer?
 fields:
-  - no label: defendants_share_lawyer
+  - no label: other_party_share_lawyer
     datatype: radio
     choices:
       - No, the lawyer only represents some of them.: False
@@ -658,7 +624,7 @@ fields:
   - note: |
       Because they do not all share the same lawyer, you will need to write the lawyer's information on the form yourself. We will give you instructions.
     show if:
-      variable: defendants_share_lawyer
+      variable: other_party_share_lawyer
       is: False
 ---
 id: docket number
@@ -689,60 +655,44 @@ fields:
     maxlength: 7
     required: False
 ---
+if: user_ask_role == "plaintiff"
 id: multiple other parties when user plaintiff
 question: |
   How many defendants or respondents are there in this case?
 subquestion: |
   These are the parties on the "other side" of the case from you.
-buttons:
-  - None:
-      code: |
-        other_parties.target_number = 0
-        other_parties.there_are_any = False
-        defendants_attorney.target_number = 0
-        user_is_plaintiff_logic = True
-  - One:
-      code: |
-        other_parties.target_number = 1
-        other_parties.there_are_any = True
-        user_is_plaintiff_logic = True
-  - More than one:
-      code: |
-        other_parties.there_are_any = True
-        user_is_plaintiff_logic = True
+fields:
+  - How many plaintiffs or petitioners are there?: other_parties.target_number
+    datatype: integer
 ---
 id: multiple other parties when user defendant
 question: |
   How many plaintiffs or petitioners are there in this case?
 subquestion: |
   These are the parties on the "other side" of the case from you.
-buttons:
-  - One:
-      code: |
-        other_parties.target_number = 1
-        other_parties.there_are_any = True
-        user_is_defendant_logic = True
-  - More than one:
-      code: |
-        other_parties.there_are_any = True
-        user_is_defendant_logic = True
+
+  There should be at least one.
+fields:
+  - How many plaintiffs or petitioners are there?: other_parties.target_number
+    datatype: integer
+    min: 1
+    validation messages:
+      min: |
+        There should be someone on the other side of your case.
 ---
-id: Plaintiff or Petitioner s Attorney Information
+id: other Attorney bar number
 question: |
-  Plaintiff or Petitioner Lawyer's Bar Number
+  ${ other_party_attorney }'s Bar Number
 subquestion: |
   ${ collapse_template(help_user_find_bar_number_template) }
 fields:
-  - "Plaintiff's or Petitioner lawyer's bar number": plaintiffs_attorney_bar_number
-    maxlength: 7
----
-id: Defendant or Respondent s Attorney Information
-question: |
-  Defendant or Respondent Lawyer's Bar Number
-subquestion: |
-  ${ collapse_template(help_user_find_bar_number_template) }
-fields:
-  - "Defendant or Respondent lawyer's bar number": defendants_attorney_bar_number
+  - label: |
+        % if user_started_case:
+        Defendant's or Respondent's lawyer's bar number
+        % else:
+        Plaintiff's or Petitioner's lawyer's bar number
+        % endif
+    field: other_party_attorney[i].bar_number
     maxlength: 7
 ---
 template: help_user_find_bar_number_template
@@ -897,13 +847,6 @@ subquestion: |
   Would you like to add your electronic signature to your form? 
 yesno: esign
 ---
- # assumes the user has no attorney
-code: |
-  if users == defendants or users == respondents:
-    defendants_attorney.target_number = 0
-  elif users == plaintiffs or users == petitioners:
-    plaintiffs_attorney.target_number = 0
----
 id: preview simpmotion
 question: |
   Preview your form before you sign it
@@ -942,7 +885,7 @@ review:
   - note: |        
       **Your address**
 
-        * ${ users[0].address.block() }
+        * ${ users[0].address.on_one_line() }
   - note: |        
       **Your phone number**
 
@@ -990,52 +933,30 @@ review:
   - note: |
       **Number of ${ other_side_label } lawyers**
       
-        % if defendants_attorney.target_number == 1 or plaintiffs_attorney.target_number == 1:
+        % if len(other_party_attorney) == 1:
         * 1, There is one ${ other_side_label } lawyer.
-        % elif defendants_attorney.target_number == 2 or plaintiffs_attorney.target_number == 2:
-        * 2+,  There are at least two ${ other_side_label } lawyers.
+        % elif len(other_party_attorney) > 1:
+        * 2+, There are at least two ${ other_side_label } lawyers.
         % else:
         * 0, There are no ${ other_side_label } lawyers.
         % endif
     show if: other_parties.there_are_any == True
   - note: |        
-      % if user_ask_role == 'defendant':
       **Does this lawyer work for all the ${ other_side_label_plural }?**
 
-        * ${ capitalize(word(yesno(plaintiffs_share_lawyer))) }
-      % else:
-      **Does this lawyer work for all the ${ other_side_label_plural }?**
-
-        * ${ capitalize(word(yesno(defendants_share_lawyer))) }
-      % endif
+        * ${ capitalize(word(yesno(other_party_share_lawyer))) }
   - note: |
       **Lawyer's name**
       
-      % if user_ask_role == 'defendant':
-        * ${ plaintiffs_attorney[0]}
-      % else:
-        * ${ defendants_attorney[0]}
-      % endif
+      ${ other_party_attorney[0] }
   - note: |        
-      % if user_ask_role == 'defendant':
-      **${ plaintiffs_attorney[0]}'s address**
+      **${ other_party_attorney[0] }'s address**
 
-        * ${ plaintiffs_attorney[0].address.block() }
-      % else:
-      **${ defendants_attorney[0]}'s address**
-
-        * ${ defendants_attorney[0].address.block() }
-      % endif
+        * ${ other_party_attorney[0].address.block() }
   - note: |        
-      % if user_ask_role == 'defendant':
-      **${ plaintiffs_attorney[0]}'s phone number**
+      **${ other_party_attorney[0]}'s phone number**
 
-        * ${ plaintiffs_attorney[0].phone_number }
-      % else:
-      **${ defendants_attorney[0]}'s phone number**
-
-        * ${ defendants_attorney[0].phone_number }
-      % endif
+        * ${ other_party_attorney[0].phone_number }
   - note: |
       _____________________
 
@@ -1057,6 +978,27 @@ review:
       %  for my_var in users:
         * ${ my_var.name }
       % endfor
+  - Edit: users[0].address.address
+    button: |
+      **Your address:**
+      ${ users[0].address.on_one_line() }
+  - Edit: users[0].phone_number
+    button: |
+      **Your Phone Number:**
+      ${ users[0].phone_number }
+  - Edit:
+    - user_ask_role
+    - recompute:
+      - user_label
+      - user_label_plural
+      - other_side_label
+      - other_side_label_plural
+      - plaintiffs
+      - defendants
+      - plaintiffs_attorney
+      - defendants_attorney
+    button: |
+      **You are a**: ${ user_label }
   - Edit: other_parties.revisit
     button: |
       **The other party: (Edit to change name and address)**
@@ -1068,14 +1010,17 @@ review:
       % if defined("motion_body"):
         Make sure you save your motion somewhere else first, so you don't lose your work. 
       % endif
-  - Edit: users[0].address.address
+  - Edit: other_party_attorney.revisit
     button: |
-      **Your address:**
-      ${ users[0].address.on_on_line() }
-  - Edit: users[0].phone_number
-    button: |
-      **Your Phone Number:**
-      ${ users[0].phone_number }
+      **Number of ${ other_side_label } lawyers**
+      
+        % if len(other_party_attorney) == 1:
+        * 1, There is one ${ other_side_label } lawyer.
+        % elif len(other_party_attorney) > 1:
+        * 2+, There are at least two ${ other_side_label } lawyers.
+        % else:
+        * 0, There are no ${ other_side_label } lawyers.
+        % endif
   - Edit: other_parties[0].address.address
     button: |
       **${ other_parties[0] }'s address**
@@ -1158,7 +1103,7 @@ review:
       % if defined("motion_body"):
       * ${ indent(single_to_double_newlines(motion_body)) } 
       % endif
-  - Edit: 
+  - Edit:
       - esign
     button: |
       **Your Electronic Signature**
@@ -1176,6 +1121,8 @@ question: |
   Edit your answers about yourself and other parties on your side of the case
 subquestion: |
   ${ users.table }
+
+  ${ users.add_action() }
 continue button field: users.revisit
 ---
 id: revisit other_parties
@@ -1183,7 +1130,18 @@ question: |
   Edit your answers about the parties on the other side of the case
 subquestion: |
   ${ other_parties.table }
+
+  ${ other_parties.add_action() }
 continue button field: other_parties.revisit
+---
+id: revisit attorneys
+question: |
+  Edit your answers about the attorneys on the other side of the case
+subquestion: |
+  ${ other_party_attorney.table }
+
+  ${ other_party_attorney.add_action() }
+continue button field: other_party_attorney.revisit
 ---
 table: users.table
 rows: users
@@ -1201,6 +1159,24 @@ columns:
       row_item.name.full() if defined("row_item.name.first") else ""
 edit:
   - name.first
+confirm: True
+---
+table: other_party_attorney.table
+rows: other_party_attorney
+columns:
+  - name: |
+      row_item.name.full() if defined("row_item.name.first") else ""
+  - address: |
+      row_item.address.on_one_line() if defined("row_item.address.address") else ""
+  - phone number: |
+      row_item.phone_number if defined("row_item.phone_number") else ""
+  - bar number: |
+      row_item.bar_number if defined("row_item.bar_number") else ""
+edit:
+  - name.first
+  - address.address
+  - phone_number
+  - bar_number
 confirm: True
 ---
 id: download simpmotion
@@ -1250,7 +1226,7 @@ attachments:
     docx template file: simpmotion_next_steps.docx
   - name: simpmotion attachment
     filename: simpmotion.pdf     
-    variable name: simpmotion_attachment[i]        
+    variable name: simpmotion_attachment[i]
     skip undefined: True
     pdf template file: simpmotion.pdf
     editable: False
@@ -1274,38 +1250,38 @@ attachments:
       - "defendants_name": |       
             ${ comma_and_list(defendants) }
       - "plaintiffs_attorney_bar_number": |
-            % if len(plaintiffs_attorney) == 1:
-            ${ plaintiffs_attorney_bar_number }
+            % if len(plaintiffs_attorney) > 0:
+            ${ plaintiffs_attorney[0].bar_number }
             % endif
       - "plaintiffs_attorney_name": |
-            % if len(plaintiffs_attorney) == 1:
+            % if len(plaintiffs_attorney) > 0:
             ${ comma_and_list(plaintiffs_attorney) }
             % elif len(plaintiffs_attorney) == 0:
             Self-represented
             % endif
       - "defendants_attorney_name": |
-            % if len(defendants_attorney) == 1:
+            % if len(defendants_attorney) > 0:
             ${ comma_and_list(defendants_attorney) }
             % elif len(defendants_attorney) == 0:
             Self-represented
             % endif
       - "defendants_attorney_bar_number": |
-            % if len(defendants_attorney) == 1:
-            ${ defendants_attorney_bar_number }
+            % if len(defendants_attorney) > 0:
+            ${ defendants_attorney[0].bar_number }
             % endif
       # uses attorney address as default if there is 1 attorney for all plaintiffs, otherwise uses plaintiff address as default. 
       - "plaintiffs_attorney_address_block": |
-            % if len(plaintiffs_attorney) == 1:
+            % if len(plaintiffs_attorney) > 0:
             ${ plaintiffs_attorney[0].address.block() }
             % else:
             ${ plaintiffs[0].address.block() }
             % endif
       - "defendants_attorney_address_block": |
-            % if len(defendants_attorney) == 1:
+            % if len(defendants_attorney) > 0:
             ${ defendants_attorney[0].address.block() }
             % else:
             ${ defendants[0].address.block() }
-            % endif     
+            % endif
       - "plaintiffs_attorney_phone_number": |
             % if len(plaintiffs_attorney) == 1:
             ${ plaintiffs_attorney[0].phone_number }
