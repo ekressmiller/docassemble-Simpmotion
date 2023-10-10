@@ -40,9 +40,9 @@ code: |
 objects:
   #default way to gather is by asking are there any, and then is there another, so if don't say anything it just does that.  Adding ".using(ask_number=True)" makes it ask for number instead.  Must then set target number somewhere.  
   # https://suffolklitlab.org/legal-tech-class/docs/repeated-information
-  - users: ALPeopleList.using(auto_gather=True, complete_attribute="completed")
-  - other_parties: ALPeopleList.using(auto_gather=True, ask_number=True, complete_attribute="completed")
-  - other_party_attorney: ALPeopleList.using(ask_number=True, auto_gather=True)
+  - users: ALPeopleList.using(auto_gather=True, complete_attribute="complete")
+  - other_parties: ALPeopleList.using(auto_gather=True, ask_number=True, complete_attribute="complete")
+  - other_party_attorney: ALPeopleList.using(ask_number=True, auto_gather=True, complete_attribute="complete")
   - trial_court: Organization
   - judge: ALPeopleList.using(ask_number=True,target_number=1)
   # telling interview to look to mlhframework package for source spreadsheet
@@ -67,17 +67,18 @@ code: |
   else:
     users[i].address.address = ""
     users[i].phone_number = ""
-  users[i].completed = True
+  users[i].complete = True
 ---
 code: |
   other_parties[i].name.first
-  other_parties[i].completed = True
+  other_parties[i].complete = True
 ---
 code: |
   other_party_attorney[i].name.first
   other_party_attorney[i].phone_number
   other_party_attorney[i].address.address
   other_party_attorney[i].bar_number
+  other_party_attorney[i].complete = True
 ---
 if: len(other_parties) == 0
 code: |
@@ -572,7 +573,7 @@ question: |
 subquestion: |
   This information would be on court documents you have from the case. Look at the most recent document you have to get the most up-to-date information. A party can hire a lawyer at any point in the case.
 fields:
-  - no label: other_party_attorney.target_number
+  - no label: other_party_attorney.rough_count
     input type: radio
     datatype: integer
     choices:
@@ -582,20 +583,30 @@ fields:
     show if: 
       code: |  
         len(other_parties) > 1
-  - no label: other_party_attorney.target_number
+  - no label: other_party_attorney.rough_count
     input type: radio
     datatype: integer
     choices:
       - No, they don't have a lawyer.: 0
       - Yes, they have a lawyer.: 1
-    show if: 
-      code: |  
-        len(other_parties) <= 1
-  - note: |
-      NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to include more than one lawyer, you will need to write them in neatly yourself.  
     show if:
-      variable: other_party_attorney.target_number
-      is: 2
+      code: |
+        len(other_parties) <= 1
+---
+id: other party has attorney
+question: |
+  % if user_started_case:
+  How many lawyers do the defendants or respondents have?
+  % else:
+  How many lawyers do the plaintiffs or petitioners have?
+  % endif
+fields:
+  - Number of lawyers: other_party.target_number
+    datatype: integer
+---
+code: |
+  if other_party_attorney.rough_count in [0, 1]:
+    other_party_attorney.target_number = other_party_attorney.rough_count
 ---
 id: lawyer is shared by all plaintiffs
 question: |
@@ -1216,12 +1227,25 @@ code: |
   # overflow--sets character limit, addendum label, etc.
   simpmotion_attachment.overflow_fields['motion_body'].overflow_trigger=850
   simpmotion_attachment.overflow_fields['motion_body'].label = "Motion (continued)"
+
+  simpmotion_attachment.overflow_fields['plaintiffs'].overflow_trigger = 1
+  simpmotion_attachment.overflow_fields['plaintiffs'].label = "Plaintiffs"
+
+  simpmotion_attachment.overflow_fields['defendants'].overflow_trigger = 1
+  simpmotion_attachment.overflow_fields['defendants'].label = "Defendants"
+
+  simpmotion_attachment.overflow_field['plaintiffs_attorney'].oveflow_trigger = 1
+  simpmotion_attachment.overflow_field['plaintiffs_attorney'].label = "Plaintiffs Attorney"
+
+  simpmotion_attachment.overflow_field['defendants_attorney'].oveflow_trigger = 1
+  simpmotion_attachment.overflow_field['defendants_attorney'].label = "Defendants Attorney"
+
   simpmotion_attachment.overflow_fields.gathered=True
 ---
 attachments:
   - name: simpmotion post interview instructions
     filename: Post-interview-instructions     
-    variable name: simpmotion_post_interview_instructions[i]        
+    variable name: simpmotion_post_interview_instructions[i]
     skip undefined: True
     docx template file: simpmotion_next_steps.docx
   - name: simpmotion attachment
@@ -1245,30 +1269,26 @@ attachments:
       - "trial_court_phone_number": ${ the_court.phone }
       # removes plaintiff from header if there are multiple user plaintiffs, if plaintiff not user,         won't collect plaintiff name anyway
       - "plaintiffs_name": |
-            ${ comma_and_list(plaintiffs) }
-      # as above for when defendant is user    
-      - "defendants_name": |       
-            ${ comma_and_list(defendants) }
+            ${ comma_and_list(simpmotion_attachment.safe_value('plaintiffs')) }
+      # as above for when defendant is user
+      - "defendants_name": |
+            ${ comma_and_list(simpmotion_attachment.safe_value('defendants')) }
       - "plaintiffs_attorney_bar_number": |
-            % if len(plaintiffs_attorney) > 0:
-            ${ plaintiffs_attorney[0].bar_number }
-            % endif
+            ${ ','.join(atty.bar_number for atty in simpmotion_attachment.safe_value('plaintiffs_attoney')) }
       - "plaintiffs_attorney_name": |
-            % if len(plaintiffs_attorney) > 0:
-            ${ comma_and_list(plaintiffs_attorney) }
-            % elif len(plaintiffs_attorney) == 0:
+            % if simpmotion_attachment.safe_value('plaintiffs_attorney') > 0:
+            ${ comma_and_list(simpmotion_attachment.safe_value('plaintiffs_attorney')) }
+            % else:
             Self-represented
             % endif
       - "defendants_attorney_name": |
-            % if len(defendants_attorney) > 0:
-            ${ comma_and_list(defendants_attorney) }
-            % elif len(defendants_attorney) == 0:
+            % if simpmotion_attachment.safe_value('defendants_attorney') > 0:
+            ${ comma_and_list(simpmotion_attachment.safe_value('defendants_attorney')) }
+            % else:
             Self-represented
             % endif
       - "defendants_attorney_bar_number": |
-            % if len(defendants_attorney) > 0:
-            ${ defendants_attorney[0].bar_number }
-            % endif
+            ${ ','.join(atty.bar_number for atty in simpmotion_attachment.safe_value('defendants_attorney')) }
       # uses attorney address as default if there is 1 attorney for all plaintiffs, otherwise uses plaintiff address as default. 
       - "plaintiffs_attorney_address_block": |
             % if len(plaintiffs_attorney) > 0:
