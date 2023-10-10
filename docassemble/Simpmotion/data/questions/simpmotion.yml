@@ -471,6 +471,10 @@ question: |
   % else:
   What is the name of the ${ ordinal(i) } plaintiff or petitioner?
   % endif
+subquestion: |
+  % if len(other_parties.complete_elements()) >= 1:
+  You have already told us about ${ comma_and_list(other_parties.complete_elements()) }.
+  % endif
 fields:
   - code: |
       other_parties[i].name_fields(person_or_business='unsure')
@@ -483,9 +487,13 @@ sets:
 id: names of defendant s attorney
 question: |
   % if user_started_case:
-  Name of defendant or respondent lawyer
+  What is the name of the ${ ordinal(i) } defendant or respondent lawyer?
   % else:
-  Name of plaintiff or petitioner lawyer
+  What is the name of the ${ ordinal(i) } plaintiff or petitioner lawyer?
+  % endif
+subquestion: |
+  % if len(other_party_attorney.complete_elements()) >= 1:
+  You have already told us about ${ comma_and_list(other_party_attorney.complete_elements()) }
   % endif
 fields:
   - code: |
@@ -593,7 +601,7 @@ fields:
       code: |
         len(other_parties) <= 1
 ---
-id: other party has attorney
+id: other party how many attorney
 question: |
   % if user_started_case:
   How many lawyers do the defendants or respondents have?
@@ -601,42 +609,12 @@ question: |
   How many lawyers do the plaintiffs or petitioners have?
   % endif
 fields:
-  - Number of lawyers: other_party.target_number
+  - Number of lawyers: other_party_attorney.target_number
     datatype: integer
 ---
 code: |
   if other_party_attorney.rough_count in [0, 1]:
     other_party_attorney.target_number = other_party_attorney.rough_count
----
-id: lawyer is shared by all plaintiffs
-question: |
-  Do all the plaintiffs or petitioners share the same lawyer?
-fields:
-  - no label: other_party_share_lawyer
-    datatype: radio
-    choices:
-      - No, the lawyer only represents some of them.: False
-      - Yes, they all have the same lawyer.: True
-  - note: |
-      Because they do not all share the same lawyer, you will need to write the lawyer's information on the form yourself. We will give you instructions.
-    show if:
-      variable: other_party_share_lawyer
-      is: False
----
-id: lawyer is shared by all defendants
-question: |
-  Do all the defendants or respondents all share the same lawyer?
-fields:
-  - no label: other_party_share_lawyer
-    datatype: radio
-    choices:
-      - No, the lawyer only represents some of them.: False
-      - Yes, they all have the same lawyer.: True
-  - note: |
-      Because they do not all share the same lawyer, you will need to write the lawyer's information on the form yourself. We will give you instructions.
-    show if:
-      variable: other_party_share_lawyer
-      is: False
 ---
 id: docket number
 question: |
@@ -693,15 +671,15 @@ fields:
 ---
 id: other Attorney bar number
 question: |
-  ${ other_party_attorney }'s Bar Number
+  What is ${ other_party_attorney[i] }'s bar number?
 subquestion: |
   ${ collapse_template(help_user_find_bar_number_template) }
 fields:
   - label: |
         % if user_started_case:
-        Defendant's or Respondent's lawyer's bar number
+        ${ other_party_attorney[i]}'s bar number
         % else:
-        Plaintiff's or Petitioner's lawyer's bar number
+        ${ other_party_attorney[i]}'s bar number
         % endif
     field: other_party_attorney[i].bar_number
     maxlength: 7
@@ -889,19 +867,23 @@ id: review screen--user side of case
 question: |
   Review your information
 review:
-  - note: |
+  - edit: users[0].name.first
+    button: |
       **Your name**
 
         * ${ users[0] }
-  - note: |        
+  - edit: users[0].address.address
+    button: |
       **Your address**
 
         * ${ users[0].address.on_one_line() }
-  - note: |        
+  - edit: users[0].phone_number
+    button: |
       **Your phone number**
 
         * ${ users[0].phone_number }
-  - note: |
+  - edit: users.revisit
+    button: |
       **Party Information**
       
         % if len(users.complete_elements()) == 1:
@@ -918,62 +900,58 @@ review:
 
       **Check your answers before going on.**
       
-      If any of this information is wrong, use the "Undo" button to go back and fix it now. Make sure these answers are correct before you continue.  
+      If any of this information is wrong, use the "edit" buttons above to fix it.
 ---
 continue button field: review_screen_other_side
 id: review screen--other side of case
 question: |
   Review the ${ (other_side_label) } information
 review:
-  - note: |
+  - edit: other_parties.revisit
+    button: |
       **Number of ${ other_side_label_plural }**
 
-        * len(other_parties)
-  - note: |
+        * ${ len(other_parties) }
+  - edit: other_parties.revisit
+    button: |
       **${ capitalize(other_side_label) }'s name**
 
-        * ${ other_parties[0] }
-  - note: |        
+        * ${ other_parties }
+  - edit: other_parties[0].address.address
+    button: |        
       **${ other_parties[0] }'s address**
 
         * ${ other_parties[0].address.block() }
-  - note: |        
+  - edit: other_parties.phone_number
+    button: |        
       **${ other_parties[0] }'s phone number**
 
         * ${ other_parties[0].phone_number }
-  - note: |
-      **Number of ${ other_side_label } lawyers**
+  - edit: other_party_attorney.revisit
+    button: |
+      **${ capitalize(other_side_label) } Lawyers**
       
         % if len(other_party_attorney) == 1:
-        * 1, There is one ${ other_side_label } lawyer.
-        % elif len(other_party_attorney) > 1:
-        * 2+, There are at least two ${ other_side_label } lawyers.
+        There is one ${ other_side_label } lawyer.
         % else:
-        * 0, There are no ${ other_side_label } lawyers.
+        There are ${ nice_number(len(other_party_attorney)) } ${ other_side_label } lawyers.
         % endif
-    show if: other_parties.there_are_any == True
-  - note: |        
-      **Does this lawyer work for all the ${ other_side_label_plural }?**
 
-        * ${ capitalize(word(yesno(other_party_share_lawyer))) }
-  - note: |
-      **Lawyer's name**
-      
-      ${ other_party_attorney[0] }
-  - note: |        
-      **${ other_party_attorney[0] }'s address**
+        % for atty in other_party_attorney:
+        * ${ atty }, bar number: ${ atty.bar_number }
 
-        * ${ other_party_attorney[0].address.block() }
-  - note: |        
-      **${ other_party_attorney[0]}'s phone number**
+          ${ atty.address.block() }
 
-        * ${ other_party_attorney[0].phone_number }
+          Phone number: ${ atty.phone_number}
+
+        % endfor
+    show if: len(other_parties) > 0
   - note: |
       _____________________
 
       **Check your answers before going on.**
       
-      If any of this information is wrong, use the "Undo" button to go back and fix it now. Make sure these answers are correct before you continue.  
+      If any of this information is wrong, use the "edit" buttons above to fix it.
 ---
 id: simpmotion overall review screen
 event: review_simpmotion
@@ -1231,14 +1209,14 @@ code: |
   simpmotion_attachment.overflow_fields['plaintiffs'].overflow_trigger = 1
   simpmotion_attachment.overflow_fields['plaintiffs'].label = "Plaintiffs"
 
+  simpmotion_attachment.overflow_fields['plaintiffs_attorney'].overflow_trigger = 1
+  simpmotion_attachment.overflow_fields['plaintiffs_attorney'].label = "Plaintiffs Attorney"
+
   simpmotion_attachment.overflow_fields['defendants'].overflow_trigger = 1
   simpmotion_attachment.overflow_fields['defendants'].label = "Defendants"
 
-  simpmotion_attachment.overflow_field['plaintiffs_attorney'].oveflow_trigger = 1
-  simpmotion_attachment.overflow_field['plaintiffs_attorney'].label = "Plaintiffs Attorney"
-
-  simpmotion_attachment.overflow_field['defendants_attorney'].oveflow_trigger = 1
-  simpmotion_attachment.overflow_field['defendants_attorney'].label = "Defendants Attorney"
+  simpmotion_attachment.overflow_fields['defendants_attorney'].overflow_trigger = 1
+  simpmotion_attachment.overflow_fields['defendants_attorney'].label = "Defendants Attorney"
 
   simpmotion_attachment.overflow_fields.gathered=True
 ---
@@ -1270,20 +1248,32 @@ attachments:
       # removes plaintiff from header if there are multiple user plaintiffs, if plaintiff not user,         won't collect plaintiff name anyway
       - "plaintiffs_name": |
             ${ comma_and_list(simpmotion_attachment.safe_value('plaintiffs')) }
+            % if simpmotion_attachment.overflow_fields['defendants'].has_overflow():
+            [MORE IN ATTACHMENT.]
+            % endif
       # as above for when defendant is user
       - "defendants_name": |
             ${ comma_and_list(simpmotion_attachment.safe_value('defendants')) }
+            % if simpmotion_attachment.overflow_fields['defendants'].has_overflow():
+            [MORE IN ATTACHMENT.]
+            % endif
       - "plaintiffs_attorney_bar_number": |
-            ${ ','.join(atty.bar_number for atty in simpmotion_attachment.safe_value('plaintiffs_attoney')) }
+            ${ ','.join(atty.bar_number for atty in simpmotion_attachment.safe_value('plaintiffs_attorney')) }
       - "plaintiffs_attorney_name": |
-            % if simpmotion_attachment.safe_value('plaintiffs_attorney') > 0:
+            % if len(simpmotion_attachment.safe_value('plaintiffs_attorney')) > 0:
             ${ comma_and_list(simpmotion_attachment.safe_value('plaintiffs_attorney')) }
+            % if simpmotion_attachment.overflow_fields['plaintiffs_attorney'].has_overflow():
+            [MORE IN ATTACHMENT.]
+            % endif
             % else:
             Self-represented
             % endif
       - "defendants_attorney_name": |
-            % if simpmotion_attachment.safe_value('defendants_attorney') > 0:
+            % if len(simpmotion_attachment.safe_value('defendants_attorney')) > 0:
             ${ comma_and_list(simpmotion_attachment.safe_value('defendants_attorney')) }
+            % if simpmotion_attachment.overflow_fields['defendants_attorney'].has_overflow():
+            [MORE IN ATTACHMENT.]
+            % endif
             % else:
             Self-represented
             % endif
@@ -1303,13 +1293,13 @@ attachments:
             ${ defendants[0].address.block() }
             % endif
       - "plaintiffs_attorney_phone_number": |
-            % if len(plaintiffs_attorney) == 1:
+            % if len(plaintiffs_attorney) >= 1:
             ${ plaintiffs_attorney[0].phone_number }
             % else:
             ${ plaintiffs[0].phone_number }
             % endif
       - "defendants_attorney_phone_number": |
-            % if len(defendants_attorney) == 1:
+            % if len(defendants_attorney) >= 1:
             ${ defendants_attorney[0].phone_number }
             % else:
             ${ defendants[0].phone_number }
