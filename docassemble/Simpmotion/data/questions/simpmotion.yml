@@ -995,21 +995,24 @@ review:
       % for my_var in other_parties:
         * ${ my_var.name }
       % endfor
-      * If you need to edit the party information, start over or use the "Undo" button to go back. 
-      % if defined("motion_body"):
-        Make sure you save your motion somewhere else first, so you don't lose your work. 
-      % endif
   - Edit: other_party_attorney.revisit
     button: |
-      **Number of ${ other_side_label } lawyers**
+      **${ capitalize(other_side_label) } Lawyers**
       
         % if len(other_party_attorney) == 1:
-        * 1, There is one ${ other_side_label } lawyer.
-        % elif len(other_party_attorney) > 1:
-        * 2+, There are at least two ${ other_side_label } lawyers.
+        There is one ${ other_side_label } lawyer.
         % else:
-        * 0, There are no ${ other_side_label } lawyers.
+        There are ${ nice_number(len(other_party_attorney)) } ${ other_side_label } lawyers.
         % endif
+
+        % for atty in other_party_attorney:
+        * ${ atty }, bar number: ${ atty.bar_number }
+
+          ${ atty.address.block() }
+
+          Phone number: ${ atty.phone_number}
+
+        % endfor
   - Edit: other_parties[0].address.address
     button: |
       **${ other_parties[0] }'s address**
