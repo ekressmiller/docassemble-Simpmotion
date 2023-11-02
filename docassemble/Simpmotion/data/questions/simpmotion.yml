@@ -52,19 +52,19 @@ objects:
 ---
  # assumes there is a plaintiff/petitioner if user is defendant/respondent
 code: |
-  if users == defendants or users == respondents:
+  if user_started_case == False:
     other_parties.there_are_any = True
 ---
 id: sets labels to use for parties in text
 code: |
   if user_ask_role == 'plaintiff':
-    other_side_label = 'defendant or respondent'
-    other_side_label_plural = 'defendants or respondents'
-    user_label = 'plaintiff or petitioner'
+    other_side_label = word('defendant or respondent')
+    other_side_label_plural = word('defendants or respondents')
+    user_label = word('plaintiff or petitioner')
   elif user_ask_role == 'defendant':
-    other_side_label = 'plaintiff or petitioner'
-    other_side_label_plural = 'plaintiffs or petitioners'
-    user_label = 'defendant or respondent'
+    other_side_label = word('plaintiff or petitioner')
+    other_side_label_plural = word('plaintiffs or petitioners')
+    user_label = word('defendant or respondent')
 ---
 sections:
   - review_simpmotion: Review your answers
