@@ -9,45 +9,28 @@ metadata:
     Notice of Hearing and Motion
   short title: |
     Motion and Hearing
-  tags:
-  # Could tag this with legal subject areas
-    - Other
-  authors:
-    - Michigan Legal Help
----
-mandatory: True
-comment: |
-  Global interview metadata
-variable name: interview_metadata["simpmotion"]
-data:
-  al_weaver_version: "1.7.0"
-  generated on: "2022-08-19"
-  title: >-
-    Notice of Hearing and Motion
-  short title: >-
-    Motion and Hearing
   description: |-
     Use this form to file a motion in an existing case if no more specific form is available.
-  original_form: >-
-    https://www.courts.michigan.gov/4a2c89/siteassets/forms/scao-approved/mc326.pdf
+  original_form:
+    - https://www.courts.michigan.gov/4a2c89/siteassets/forms/scao-approved/mc326.pdf
   allowed courts: 
     - "Circuit Court"
     - "District Court"
-  categories:
-  # could tag legal subject areas
+  tags:
+  # Could tag this with legal subject areas
     - "Various"
+  authors:
+    - Michigan Legal Help
   typical role: "unknown"
-  generate download screen: True
----
-code: |
-  interview_metadata['main_interview_key'] =  'simpmotion'
+  al_weaver_version: "1.7.0"
+  generated on: "2022-08-19"
 ---
   # overflow--sets default message
   code: |
     AL_DEFAULT_OVERFLOW_MESSAGE = " [PLEASE SEE ATTACHMENT.]"
 ---
 code: |
-  github_repo_name =  'docassemble-Simpmotion'
+  github_repo_name = 'docassemble-Simpmotion'
 ---
 code: |
   interview_short_title = "File a Notice of Hearing and Motion in your case"
@@ -69,19 +52,19 @@ objects:
 ---
  # assumes there is a plaintiff/petitioner if user is defendant/respondent
 code: |
-  if users == defendants or users == respondents:
+  if user_started_case == False:
     other_parties.there_are_any = True
 ---
 id: sets labels to use for parties in text
 code: |
   if user_ask_role == 'plaintiff':
-    other_side_label = 'defendant or respondent'
-    other_side_label_plural = 'defendants or respondents'
-    user_label = 'plaintiff or petitioner'
+    other_side_label = word('defendant or respondent')
+    other_side_label_plural = word('defendants or respondents')
+    user_label = word('plaintiff or petitioner')
   elif user_ask_role == 'defendant':
-    other_side_label = 'plaintiff or petitioner'
-    other_side_label_plural = 'plaintiffs or petitioners'
-    user_label = 'defendant or respondent'
+    other_side_label = word('plaintiff or petitioner')
+    other_side_label_plural = word('plaintiffs or petitioners')
+    user_label = word('defendant or respondent')
 ---
 sections:
   - review_simpmotion: Review your answers
@@ -92,7 +75,7 @@ comment: |
 id: interview_order_simpmotion
 code: |
   # Set the allowed courts for this interview
-  allowed_courts = interview_metadata["simpmotion"]["allowed courts"]
+  allowed_courts = all_variables(special="metadata")["allowed courts"]
   nav.set_section('review_simpmotion')
   welcome
   using_this_tool
@@ -533,16 +516,11 @@ sets:
   - users[i].name.suffix    
 id: other users names
 question: |
-  % if al_form_type in ['starts_case','existing_case','appeal']:
   % if users==plaintiffs:
   Who is the ${ ordinal(i) } plaintiff or petitioner?
   % else:
   Who is the ${ ordinal(i) } defendant or respondent?
   % endif  
-  % else:
-  What is the name of the ${ ordinal_number(i) } person who is adding their name to
-  this form with you?
-  % endif
 fields:
   - code: |
       users[i].name_fields()
@@ -1272,14 +1250,10 @@ attachments:
       - "trial_court_circuit": |
             % if the_court.type == 'circuit':
             ${ the_court.number }
-            % else:
-            ${ '' }
             % endif
       - "trial_court_district": |
             % if the_court.type == 'district':
             ${ the_court.number }
-            % else:
-            ${ '' }
             % endif
       - "trial_court_county": ${ the_court.address.county }
       - "docket_number": ${ docket_number }
