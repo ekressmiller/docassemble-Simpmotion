@@ -36,21 +36,17 @@ code: |
   MLH_time_max = "30"
   MLH_instructions_included = True
   MLH_form_type = "form"
+  MLH_case_type_language = ""
 ---
 objects:
   #default way to gather is by asking are there any, and then is there another, so if don't say anything it just does that.  Adding ".using(ask_number=True)" makes it ask for number instead.  Must then set target number somewhere.  
   # https://suffolklitlab.org/legal-tech-class/docs/repeated-information
   - users: ALPeopleList.using(ask_number=True)
   - other_parties: ALPeopleList.using(ask_number=True)
-  - users_lawyers: ALPeopleList.using(ask_number=True)
-  - other_parties_lawyers: ALPeopleList.using(ask_number=True)
+  - user_side_lawyers: ALPeopleList.using(ask_number=True)
+  - other_party_lawyers: ALPeopleList.using(ask_number=True)
   - trial_court: Organization
   - judge: ALPeopleList.using(ask_number=True,target_number=1)
----
- # assumes there is a plaintiff/petitioner if user is defendant/respondent
-code: |
-  if user_started_case == False:
-    other_parties.there_are_any = True
 ---
 id: sets labels to use for parties in text
 code: |
@@ -100,60 +96,36 @@ code: |
   user_ask_role
   user_label
   set_progress(22)
-  multiple_users
-  if multiple_users==True:
-    user_first_party
   users[0].name.first
-  # this interview already tells us to assume user has no attorney, so presuming that here too
+  multiple_users
+  set_progress(33)
+  # we assume user has no attorney
   if multiple_users == False or user_first_party == True:
     users[0].address.address
     users[0].phone_number
   else:
     users[1].name.first
     if first_party_user_side_has_lawyer == True:
-      users_lawyers[0].name.first
-      users_lawyers[0].address.address
-      users_lawyers[0].phone_number
-      users_lawyers_bar_number
+      user_side_lawyers[0].name.first
+      user_side_lawyers[0].address.address
+      user_side_lawyers[0].phone_number
+      user_side_lawyers[0].bar_number
     else:
       users[1].address.address
       users[1].phone_number
-  review_screen_user_side
-  # presents correct version of multiple_other_parties screen depending on user role
-  set_progress(33)
-  if user_ask_role=='plaintiff':
-    user_is_plaintiff_logic
-  else:
-    user_is_defendant_logic
-  if multiple_other_parties==True:
-    multiple_other_parties_warning
-  if other_parties.target_number == 1:
-    other_parties.gather()
-  plaintiffs_attorney.target_number
-  if plaintiffs_attorney.target_number == 1:
-    if plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True:
-      plaintiffs_attorney.gather()
-      plaintiffs_attorney[0].phone_number
-      plaintiffs_attorney[0].address.address
-      plaintiffs_attorney_bar_number
   set_progress(44)
-  if other_parties.there_are_any == True:
-    defendants_attorney.target_number
-    if defendants_attorney.target_number == 1:
-      if multiple_other_parties == False or defendants_share_lawyer == True:
-        defendants_attorney.gather()
-        defendants_attorney[0].phone_number
-        defendants_attorney[0].address.address
-        defendants_attorney_bar_number  
+  review_screen_user_side
+  other_parties.gather()
   set_progress(55)
-  if user_ask_role == 'plaintiff':
-    if other_parties.there_are_any == True and multiple_other_parties == False and defendants_attorney.target_number == 0:
-      defendants[0].address.address
-      defendants[0].phone_number
-  else:
-    if multiple_other_parties == False and plaintiffs_attorney.target_number == 0:
-      plaintiffs[0].address.address
-      plaintiffs[0].phone_number
+  if len(other_parties) == 1:
+    if other_side_has_lawyer == True:
+      other_party_lawyers[0].name.first
+      other_party_lawyers[0].address.address
+      other_party_lawyers[0].phone_number
+      other_party_lawyers[0].bar_number
+    else:
+      other_parties[0].address.address
+      other_parties[0].phone_number
   review_screen_other_side
   set_progress(66)
   docket_number
@@ -162,7 +134,7 @@ code: |
   trial_court.name.text = "Trial Court"
   county_choice
   court_index
-  #calling value of the_court to load AL_court_loader object
+  # calling value of the_court to load AL_court_loader object
   the_court
   set_progress(77)
   motion_title
@@ -178,8 +150,8 @@ code: |
   set_progress(88)
   users.gather()
   set_parts(subtitle=str(users))
-  esign
-  if esign == True:
+  MLH_esign
+  if MLH_esign == True:
     signature_date
   interview_order_simpmotion = True
 ---
@@ -407,18 +379,6 @@ fields:
     show if:
       variable: user_ask_role
       is: "defendant"
- # commented out because using different gather method
- # ---
- # id: any other opposing parties
- # question: |
- #   % if users==plaintiffs:
- #   Is there any other defendant or respondent in this case?
- #   % else:
- #   Is there any other plaintiff or petitioner in this case?
- #   % endif
- # fields:
- #   - no label: other_parties.there_is_another
- #     datatype: yesnoradio
 ---
 template: help_user_ask_role_template
 subject: |
@@ -426,209 +386,60 @@ subject: |
 content: |
   You can find the parties by looking at the first page of an existing court document, like a complaint, petition, or answer. The top of the first page is the “caption” which has the basic case information. This area will list all of the parties in the case with their titles.
 
-  If you were the first person to file a form to start this case, you are the "Plaintiff" or the "Petitioner."  If someone else started this case by filing in court, you
-  are the "Defendant" or the "Respondent." 
+  If you were the first person to file a form to start this case, you are the "Plaintiff" or the "Petitioner."  If someone else started this case by filing in court, you are the "Defendant" or the "Respondent." 
 ---
 sets:
   - other_parties[i].name.first
   - other_parties[i].name.last
   - other_parties[i].name.middle
   - other_parties[i].name.suffix
-id: names of opposing parties
+id: name of opposing party
 question: |
-  % if users==plaintiffs:
-  Name of defendant or respondent
+  % if user_ask_role == 'plaintiff':
+  Name of **first** defendant or respondent
   % else:
-  Name of plaintiff or petitioner
+  Name of **first** plaintiff or petitioner
+  % endif
+subquestion: |
+  % if user_ask_role == 'plaintiff':
+  We need to list the **first** defendant or respondent on your motion. 
+  
+  If there's **just one** defendant or respondent, tell us about them. If there is **more than one** defendant or respondent, tell us about the one who is listed first.
+  % else:
+  We need to list the **first** plaintiff or petitioner on your motion. 
+  
+  If there's **just one** plaintiff or petitioner, tell us about them. If there is **more than one** plaintiff or petitioner, tell us about the one who is listed first.
   % endif
 fields:
   - code: |
       other_parties[i].name_fields(person_or_business='unsure')
+  - note: |
+      ${ collapse_template(help_first_other_party_template) }
 ---
-sets:
-  - plaintiffs_attorney[i].name.first
-  - plaintiffs_attorney[i].name.last
-  - plaintiffs_attorney[i].name.middle
-  - plaintiffs_attorney[i].name.suffix
-id: names of plaintiff s attorney
-question: |
-  Name of plaintiff or petitioner lawyer
-fields:
-  - code: |
-      plaintiffs_attorney[i].name_fields()
----
-sets:
-  - defendants_attorney[i].name.first
-  - defendants_attorney[i].name.last
-  - defendants_attorney[i].name.middle
-  - defendants_attorney[i].name.suffix
-id: names of defendant s attorney
-question: |
-  Name of defendant or respondent lawyer
-fields:
-  - code: |
-      defendants_attorney[i].name_fields()
----
- # commented out because using different gather method now
- # id: any other users
- # question: |
- #   % if al_form_type in ['starts_case','existing_case','appeal']:
- #   % if users==plaintiffs:
- #   Is there any other plaintiff or petitioner in this case?
- #   % else:
- #   Is there any other defendant or respondent in this case?
- #   % endif  
- #   % else:
- #   Is anyone else adding their name to this form with you?
- #   % endif
- # subquestion: |
- #   % if len(users.elements) > 1:  
- #   So far you have told us about ${comma_and_list(users.complete_elements())}.
- #   % endif
- # fields:
- #   - no label: users.there_is_another
- #     datatype: yesnoradio
- # ---
-sets:
-  - users[i].name.first
-  - users[i].name.last
-  - users[i].name.middle
-  - users[i].name.suffix    
-id: other users names
-question: |
-  % if users==plaintiffs:
-  Who is the ${ ordinal(i) } plaintiff or petitioner?
+generic object: ALIndividual
+template: x.person_type_label
+content: |
+  % if user_ask_role == 'plaintiff':
+  Is the first defendant or respondent a person or a business?
   % else:
-  Who is the ${ ordinal(i) } defendant or respondent?
-  % endif  
-fields:
-  - code: |
-      users[i].name_fields()
----
- #saved copy of how was doing this before--useful if don't need to limit number of attorneys and want to use default gather method
-# id: other party has attorney
- # question: |
- #   % if users==plaintiffs:
- #   % if len(other_parties.elements) > 1:  
- #   Do the defendants or respondents have a lawyer?
- #   % else:
- #   Does the defendant or respondent have a lawyer?
- #   % endif
- #   % else: 
- #   % if len(other_parties.elements) > 1:  
- #   Do the plaintiffs or petitioners have a lawyer?
- #   % else:
- #   Does the plaintiff or petitioner have a lawyer?
- #   % endif
- #   % endif
- # fields:
- #   - no label: defendants_attorney.there_are_any
- #     datatype: yesnoradio
- #     show if: 
- #       code: |  
- #         users == plaintiffs
- #   - no label: plaintiffs_attorney.there_are_any
- #     datatype: yesnoradio
- #     show if: 
- #       code: |  
- #         users == defendants
- # ---
-id: other party has attorney
-question: |
-  % if users==plaintiffs:
-  % if multiple_other_parties==True:  
-  Do the defendants or respondents have a lawyer?
-  % else:
-  Does the defendant or respondent have a lawyer?
+  Is the first plaintiff or petitioner a person or a business?
   % endif
+---
+template: help_first_other_party_template
+subject: |
+  % if user_ask_role == 'plaintiff':
+  How do I know who is the first defendant or respondent?
+  % else:
+  How do I know who is the first plaintiff or petitioner?
+  % endif
+content: |
+  You can find the parties by looking at the first page of an existing court document, like a complaint, petition, or answer. The top of the first page has a “caption” with basic case information. This area should list the parties in the case with their titles.
+
+  % if user_ask_role=='defendant':
+  Look at the part of the document that lists the plaintiffs or petitioners. Look to see who is listed as the **first** plaintiff or petitioner. 
   % else: 
-  % if multiple_other_parties==True:  
-  Do the plaintiffs or petitioners have a lawyer?
-  % else:
-  Does the plaintiff or petitioner have a lawyer?
+  Look at the part of the document that lists the defendants or respondents. Look to see who is listed as the **first** defendant or respondent. 
   % endif
-  % endif
-subquestion: |
-  This information would be on court documents you have from the case. Look at the most recent document you have to get the most up-to-date information. A party can hire a lawyer at any point in the case.
-fields:
-  - no label: defendants_attorney.target_number
-    input type: radio
-    datatype: integer
-    choices:
-      - No, they don't have a lawyer.: 0
-      - Yes, they have 1 lawyer.: 1
-      - Yes, they have multiple lawyers.: 2
-    show if: 
-      code: |  
-        users == plaintiffs and multiple_other_parties == True
-  - no label: defendants_attorney.target_number
-    input type: radio
-    datatype: integer
-    choices:
-      - No, they don't have a lawyer.: 0
-      - Yes, they have a lawyer.: 1
-    show if: 
-      code: |  
-        users == plaintiffs and multiple_other_parties == False
-  - no label: plaintiffs_attorney.target_number
-    input type: radio
-    datatype: integer
-    choices:
-      - No, they don't have a lawyer.: 0
-      - Yes, they have 1 lawyer.: 1
-      - Yes, they have multiple lawyers.: 2
-    show if: 
-      code: |  
-        users == defendants and multiple_other_parties == True
-  - no label: plaintiffs_attorney.target_number
-    input type: radio
-    datatype: integer
-    choices:
-      - No, they don't have a lawyer.: 0
-      - Yes, they have a lawyer.: 1
-    show if: 
-      code: |  
-        users == defendants and multiple_other_parties == False
-  - note: |
-      NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to include more than one lawyer, you will need to write them in neatly yourself.  
-    show if:
-      variable: plaintiffs_attorney.target_number
-      is: 2
-  - note: |
-      NOTE: This tool **cannot** put multiple lawyers on the form.  If you want to include more than one lawyer, you will need to write them in neatly yourself.  
-    show if:
-      variable: defendants_attorney.target_number
-      is: 2
----
-id: lawyer is shared by all plaintiffs
-question: |
-  Do all the plaintiffs or petitioners share the same lawyer?
-fields:
-  - no label: plaintiffs_share_lawyer
-    datatype: radio
-    choices:
-      - No, the lawyer only represents some of them.: False
-      - Yes, they all have the same lawyer.: True
-  - note: |
-      Because they do not all share the same lawyer, you will need to write the lawyer's information on the form yourself. We will give you instructions.
-    show if:
-      variable: plaintiffs_share_lawyer
-      is: False
----
-id: lawyer is shared by all defendants
-question: |
-  Do all the defendants or respondents all share the same lawyer?
-fields:
-  - no label: defendants_share_lawyer
-    datatype: radio
-    choices:
-      - No, the lawyer only represents some of them.: False
-      - Yes, they all have the same lawyer.: True
-  - note: |
-      Because they do not all share the same lawyer, you will need to write the lawyer's information on the form yourself. We will give you instructions.
-    show if:
-      variable: defendants_share_lawyer
-      is: False
 ---
 id: docket number
 question: |
@@ -669,50 +480,34 @@ fields:
   - no label: multiple_users
     datatype: yesnoradio
 ---
-id: multiple other parties when user plaintiff
+# asks if there is a defendant if user is plaintiff
+id: is there a defendant or respondent
 question: |
-  How many defendants or respondents are there in this case?
+  Is there a defendant or respondent in this case? 
 subquestion: |
-  These are the parties on the "other side" of the case from you.
-buttons:
-  - None:
-      code: |
-        other_parties.target_number = 0
-        other_parties.there_are_any = False
-        multiple_other_parties = False
-        defendants_attorney.target_number = 0
-        user_is_plaintiff_logic = True
-  - One:
-      code: |
-        other_parties.target_number = 1
-        other_parties.there_are_any = True
-        multiple_other_parties = False
-        user_is_plaintiff_logic = True
-  - More than one:
-      code: |
-        other_parties.target_number = 0
-        other_parties.there_are_any = True
-        multiple_other_parties = True
-        user_is_plaintiff_logic = True
+  You said you are the plaintiff or petitioner. In  most cases, there is someone on the other side of the case called the defendant or respondent. 
+fields:
+  - Is there a defendant or respondent in this case?: other_parties.target_number
+    input type: radio
+    label above field: True
+    choices:
+      - Yes: 1
+      - No: 0
+  - note: |
+      ${ collapse_template(help_any_defendant_template) }
 ---
-id: multiple other parties when user defendant
-question: |
-  How many plaintiffs or petitioners are there in this case?
-subquestion: |
-  These are the parties on the "other side" of the case from you.
-buttons:
-  - One:
-      code: |
-        other_parties.target_number = 1
-        other_parties.there_are_any = True
-        multiple_other_parties = False
-        user_is_defendant_logic = True
-  - More than one:
-      code: |
-        other_parties.target_number = 0
-        other_parties.there_are_any = True
-        multiple_other_parties = True
-        user_is_defendant_logic = True
+# assumes there is always a plaintiff
+code: |
+  if user_ask_role == 'defendant':
+    other_parties.target_number = 1
+---
+template: help_any_defendant_template
+subject: |
+  How do I know?
+content: |
+  You can find the parties by looking at the first page of an existing court document, like a complaint, petition, or answer. The top of the first page is the “caption” which has the basic case information. This area will list all of the parties in the case with their titles.
+  
+  Look to see if there is a defendant or respondent listed.
 ---
 id: is user the first party on their side
 question: |
@@ -765,55 +560,37 @@ fields:
     datatype: yesnoradio
     label above field: True
 ---
-id: multiple other parties warning
-continue button field: multiple_other_parties_warning
+id: does first party on other side have lawyer
 question: |
-  % if user_ask_role=='plaintiff':
-  You will need to write in the defendants' or respondents' names yourself.
-  % else: 
-  You will need to write in the plaintiffs' or petitioners' names yourself.
-  % endif
+  Does ${ other_parties[0] } have a lawyer?
 subquestion: |
-  This tool can only print one party on the form for each side of the case.  You will need to neatly write in the names of the parties on the other side of the case yourself.  We will give you instructions when you complete this tool. 
- #  I think this is redundant so taking it out for now
- #  ---
- #  id: more than one other party
- #  question: |
- #    % if users==plaintiffs:
- #    How many defendants or respondents are there in this case?
- #    % else: 
- #    How many plaintiffs or petitioners are there in this case?
- #    % endif
- #  fields:
- #    - no label: other_parties.target_number
- #      input type: radio
- #      datatype: integer
- #      choices:
- #        - There is only one.: 1
- #        - There are more than one.: 2
- #    - note: |
- #        NOTE: This tool **cannot** put multiple parties on the form.  If you want to input more than one lawyer, you will need to write them in neatly yourself.  
- #      show if:
- #        variable: other_parties.target_number
- #        is: 2
+  This information would be on court documents you have from the case. Look at the most recent document you have to get the most up-to-date information. A party can hire a lawyer at any point in the case.
+fields:
+  - Does ${ other_parties[0] } have a lawyer?: other_side_has_lawyer
+    datatype: yesnoradio
+    label above field: True
 ---
-id: Plaintiff or Petitioner s Attorney Information
+id: Bar number for user side lawyer
 question: |
-  Plaintiff or Petitioner Lawyer's Bar Number
+  ${ user_side_lawyers[0] }'s Bar Number
 subquestion: |
+  Every Michigan lawyer has a "bar number" or a license number. The number starts with the letter P.
   ${ collapse_template(help_user_find_bar_number_template) }
 fields:
-  - "Plaintiff's or Petitioner lawyer's bar number": plaintiffs_attorney_bar_number
+  - What is ${ user_side_lawyers[0] }'s bar number?: user_side_lawyers[0].bar_number
     maxlength: 7
+    label above field: True
 ---
-id: Defendant or Respondent s Attorney Information
+id: Bar number for other side lawyer
 question: |
-  Defendant or Respondent Lawyer's Bar Number
+  ${ other_party_lawyers[0] }'s Bar Number
 subquestion: |
+  Every Michigan lawyer has a "bar number" or a license number. The number starts with the letter P.
   ${ collapse_template(help_user_find_bar_number_template) }
 fields:
-  - "Defendant or Respondent lawyer's bar number": defendants_attorney_bar_number
+  - What is ${ other_party_lawyers[0] }'s bar number?: other_party_lawyers[0].bar_number
     maxlength: 7
+    label above field: True
 ---
 template: help_user_find_bar_number_template
 subject: |
@@ -835,9 +612,11 @@ id: Motion Title
 question: |
   Motion Title
 subquestion: |
-  Fill in the blank below with the title of your motion. This must be short and fit on one line. It should briefly tell the judge what you are asking for. 
+  Give your motion a title. This must be short and fit on one line. It should briefly tell the judge what you are asking for. 
   
-  A motion is a document you use to ask the judge to do something. If you are having trouble deciding what to name the motion, think of the word “Motion” as meaning “I want to ask the judge” For example, if you are getting divorced and want to waive the waiting period you might  say “I want to ask the judge to waive the statutory waiting period.” In that situation the motion title could be “Motion to Waive the Statutory Waiting Period.”
+  A motion is a document you use to ask the judge to do something. If you are having trouble deciding what to name the motion, think of the word “Motion” as meaning “I want to ask the judge.” 
+  
+  For example, if you are getting divorced and want to waive the waiting period, you might say “I want to ask the judge to waive the statutory waiting period.” In that situation, the motion title could be “Motion to Waive the Statutory Waiting Period.”
 under: |  
   If you are not sure of the title you can leave this blank and neatly write it by hand before you file it in court.
 fields:
@@ -857,11 +636,15 @@ subquestion: |
   * **Be brief**. Give good reasons why the judge should do what you are asking but make sure that you stay focused on the specific issues related to the request.
   * **Include attachments if they support your arguments**. If you have a document or photo that supports a statement you make, you can attach an exhibit. For example, you could write: “My spouse has been physically abusive and I got a Personal Protection Order in 2019. See Exhibit A.” If you reference any exhibits in your motion be sure to label and attach them to your finished forms before filing in court. In the example here you would clearly write “Exhibit A” on a copy of the 2019 protection order and attach it to the motion.
   * **Do your best to understand what rules the judge will follow when deciding your motion**. For example, if the law says that the judge can grant a motion in your case if you show a change in circumstances, be sure to explain the change in circumstances. If the court rules say you must show good cause, explain the good cause. It is a good idea to use those specific words. For example, if you need to show good cause, say “There is good cause because…”
-  * **Do not include any personal identifying information**. Personal identifying information includes: date of birth, social security or national identification number, driver’s license or state identification number, passport number, and financial account numbers. If a court rule or law requires you to include this information or if the information is necessary for identification purposes you must fill out form [MC 97](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97.pdf) (if the information is related to a defendant, respondent, or decedent) or form [MC 97a](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97a.pdf) (if the information is about a plaintiff, petitioner, or anyone else not included in MC 97). Include the information on MC 97 and do not include it in the Motion. Instead, include a reference in the Motion to ask the judge to see MC 97 for the information.
+  * **Do not include any {personal identifying information}**. If you need to include this type of information, you must fill out form [MC 97](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97.pdf) (if the information is related to a defendant, respondent, or decedent) or form [MC 97a](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97a.pdf) (if the information is about a plaintiff, petitioner, or anyone else not included in MC 97). Include the information on MC 97 and do not include it in the Motion. Instead, include a reference in the Motion to ask the judge to see MC 97 for the information.
   
-  Use the space below to tell the judge what you want and to give reasons for it. If you can't finish writing what you want to say right now, go to the menu at the top of the screen and click "Sign up or sign in to save answers".  If you are already signed in, click "Next" to save your work. 
+  Use the space below to tell the judge what you want and to give reasons for it. If you can't finish writing what you want to say right now, go to the menu at the top of the screen and click "Sign up or sign in to save answers".  If you are already signed in, click **Continue** to save your work. 
+terms:
+  personal identifying information: |
+    Personal identifying information includes: date of birth, social security or national identification number, driver’s license or state identification number, passport number, and financial account numbers.
 fields:
   - "Your motion": motion_body
+    label above field: True
     input type: area
     rows: 12
     hint: Type your motion here.
@@ -911,14 +694,6 @@ if: |
 id: Will the hearing be held at the courthouse
 question: |
   Where will the hearing be?
-# buttons:
-#  - Yes:
-#      code: |
-#        hearing_at_court = True
-#        undefine('hearing_address_on_one_line')
-#  - No:
-#      code: |
-#        hearing_at_court = False
 fields:
   - "Will the hearing be in person at the courthouse?": hearing_at_court
     datatype: yesnoradio
@@ -928,20 +703,6 @@ fields:
       variable: hearing_at_court 
       is: False  
     maxlength: 50 
-# ---
-#  # if modifier is needed to make this work as followup question on review screen
-# if: |
-#   hearing_at_court == False
-# id: What is the address for the hearing
-# question: |
-#   Where will the hearing be?
-# subquestion: |
-#   * Type the address if it will be at a physical location.
-#   * If the hearing will be online or by phone, briefly explain.
-# fields:
-#   - "Address of the hearing": hearing_address_on_one_line
-#     maxlength: 50
-#     required: False
 ---
 id: OK Not to Have Hearing Info
 continue button field: no_hearing_info_ok
@@ -959,20 +720,24 @@ fields:
   - "Date of Service": service_date
     datatype: date
 ---
+id: download simpmotion
+event: simpmotion_download
 question: |
-  Electronic Signature
+  All done
 subquestion: |
-  This tool can put "*/s/ ${ users[0] }*" where you would sign your name so you do not have to sign the form by hand. The court will accept this as your signature.
+  Thank you ${users[0]}. Your form is ready to download and deliver.
+  
+  View, download and send your form below. Click the "Edit answers" button to fix any mistakes.
 
-  Would you like to add your electronic signature to your form? 
-yesno: esign
----
- # assumes the user has no attorney
-code: |
-  if users == defendants or users == respondents:
-    defendants_attorney.target_number = 0
-  elif users == plaintiffs or users == petitioners:
-    plaintiffs_attorney.target_number = 0
+  ${ action_button_html(url_action('review_simpmotion'), label='Edit answers', color='info') }
+  
+  
+  ${ al_user_bundle.download_list_html() }
+  
+
+  ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
+
+progress: 100
 ---
 code: |
   if multiple_users == False or user_first_party == True:
@@ -982,10 +747,10 @@ code: |
 ---
 id: first party user side name
 sets:
-    - users[1].name.first
-    - users[1].name.last
-    - users[1].name.middle
-    - users[1].name.suffix
+    - users[i].name.first
+    - users[i].name.last
+    - users[i].name.middle
+    - users[i].name.suffix
 question:  |
   % if user_ask_role=='plaintiff':
   What is the **first** plaintiff or petitioner's name?
@@ -994,21 +759,33 @@ question:  |
   % endif
 fields:
   - code: |
-      users[1].name_fields()
+      users[i].name_fields()
   - note: |
       ${ collapse_template(help_user_first_party_template) }
 ---
 id: user side lawyer name
 sets:
-    - users_lawyers[0].name.first
-    - users_lawyers[0].name.last
-    - users_lawyers[0].name.middle
-    - users_lawyers[0].name.suffix
+    - user_side_lawyers[0].name.first
+    - user_side_lawyers[0].name.last
+    - user_side_lawyers[0].name.middle
+    - user_side_lawyers[0].name.suffix
 question:  |
   What is ${ users[1] }'s lawyer's name?
 fields:
   - code: |
-      users_lawyers[0].name_fields()
+      user_side_lawyers[0].name_fields()
+---
+id: other side side lawyer name
+sets:
+    - other_party_lawyers[0].name.first
+    - other_party_lawyers[0].name.last
+    - other_party_lawyers[0].name.middle
+    - other_party_lawyers[0].name.suffix
+question:  |
+  What is ${ other_parties[0] }'s lawyer's name?
+fields:
+  - code: |
+      other_party_lawyers[0].name_fields()
 ---
 id: preview simpmotion
 question: |
@@ -1026,16 +803,6 @@ subquestion: |
   Remember to come back to this window to continue and sign your form.
 continue button field: simpmotion_preview_question   
 ---
-# commented out because not using signature field
-# code: |
-#   signature_fields = ['users.signature_1']
-# ---
-code: |
-  # This is a placeholder for the addresses that will be searched
-  # for matching address to court. Edit if court venue is based on 
-  # a different address than the user's
-  addresses_to_search = [user.address for user in users]
----
 continue button field: review_screen_user_side
 id: review screen--user side of case
 question: |
@@ -1046,22 +813,28 @@ review:
 
         * ${ users[0] }
   - note: |        
-      **Your address**
+      **Your information**
 
         * ${ users[0].address.block() }
+        * Phone: ${ users[0].phone_number }
+                  
+      You are the first (or the only) ${ user_label } listed in the case.
   - note: |        
-      **Your phone number**
+      **First listed ${ user_label }**
 
-        * ${ users[0].phone_number }
-  - note: |
-      **Party Information**
+        * ${ users[1] }
+  - note: |            
+      **${ users[1] }'s address and phone number**
       
-        % if multiple_users == False:
-        * You are the **only** ${ user_label }.
-        % else:
-        * You are a ${ user_label }. 
-        * There is at least one other ${ user_label } in the case.
-        % endif
+        * ${ users[1].address.block() }
+        * Phone: ${ users[1].phone_number }
+  - note: |       
+      **Lawyer information for ${ users[1] }**
+      
+        * ${ user_side_lawyers[0] }
+        * ${ user_side_lawyers[0].address.block() }
+        * Phone: ${ user_side_lawyers[0].phone_number }
+        * Bar Number: ${ user_side_lawyers[0].bar_number }
   - note: |
       _____________________
 
@@ -1075,76 +848,26 @@ question: |
   Review the ${ (other_side_label) } information
 review:
   - note: |
-      **Number of ${ other_side_label_plural }**
-      
-        % if other_parties.there_are_any == False:
-        * 0, There are no ${ other_side_label_plural } in the case.
-        % elif multiple_other_parties == False:
-        * 1, There is only one ${ other_side_label } in the case.
-        % elif multiple_other_parties == True:
-        * 2+, There are at least two ${ other_side_label_plural } in the case.
-        % endif
+      There are **no ${ other_side_label_plural }** in this case.
+ 
+    show if: len(other_parties) == 0
   - note: |
-      **${ capitalize(other_side_label) }'s name**
+      **First listed ${ (other_side_label) }**
 
         * ${ other_parties[0] }
-  - note: |        
-      **${ other_parties[0] }'s address**
-
+  - note: |            
+      **${ other_parties[0] }'s address and phone number**
+      
         * ${ other_parties[0].address.block() }
-  - note: |        
-      **${ other_parties[0] }'s phone number**
-
-        * ${ other_parties[0].phone_number }
-  - note: |
-      **Number of ${ other_side_label } lawyers**
+        * Phone: ${ other_parties[0].phone_number }
+  - note: |       
+      **Lawyer information for ${ other_parties[0] }**
       
-        % if defendants_attorney.target_number == 1 or plaintiffs_attorney.target_number == 1:
-        * 1, There is one ${ other_side_label } lawyer.
-        % elif defendants_attorney.target_number == 2 or plaintiffs_attorney.target_number == 2:
-        * 2+,  There are at least two ${ other_side_label } lawyers.
-        % else:
-        * 0, There are no ${ other_side_label } lawyers.
-        % endif
-    show if: other_parties.there_are_any == True
-  - note: |        
-      % if user_ask_role == 'defendant':
-      **Does this lawyer work for all the ${ other_side_label_plural }?**
-
-        * ${ capitalize(word(yesno(plaintiffs_share_lawyer))) }
-      % else:
-      **Does this lawyer work for all the ${ other_side_label_plural }?**
-
-        * ${ capitalize(word(yesno(defendants_share_lawyer))) }
-      % endif
-  - note: |
-      **Lawyer's name**
-      
-      % if user_ask_role == 'defendant':
-        * ${ plaintiffs_attorney[0]}
-      % else:
-        * ${ defendants_attorney[0]}
-      % endif
-  - note: |        
-      % if user_ask_role == 'defendant':
-      **${ plaintiffs_attorney[0]}'s address**
-
-        * ${ plaintiffs_attorney[0].address.block() }
-      % else:
-      **${ defendants_attorney[0]}'s address**
-
-        * ${ defendants_attorney[0].address.block() }
-      % endif
-  - note: |        
-      % if user_ask_role == 'defendant':
-      **${ plaintiffs_attorney[0]}'s phone number**
-
-        * ${ plaintiffs_attorney[0].phone_number }
-      % else:
-      **${ defendants_attorney[0]}'s phone number**
-
-        * ${ defendants_attorney[0].phone_number }
-      % endif
+        ${ other_party_lawyers[0] }
+        
+        * ${ other_party_lawyers[0].address.block() }
+        * Phone: ${ other_party_lawyers[0].phone_number }
+        * Bar Number: ${ other_party_lawyers[0].bar_number }
   - note: |
       _____________________
 
@@ -1239,36 +962,17 @@ review:
       * ${ indent(single_to_double_newlines(motion_body)) } 
       % endif
   - Edit: 
-      - esign
+      - MLH_esign
     button: |
       **Your Electronic Signature**
         
       * Do you want to E-Sign these forms?---
-      % if esign == True:
+      % if MLH_esign == True:
       **Yes**
       % else:
       **No**
       % endif
 resume button label: Continue interview
----
-id: download simpmotion
-event: simpmotion_download
-question: |
-  All done
-subquestion: |
-  Thank you ${users}. Your form is ready to download and deliver.
-  
-  View, download and send your form below. Click the "Edit answers" button to fix any mistakes.
-
-  ${ action_button_html(url_action('review_simpmotion'), label='Edit answers', color='info') }
-  
-  
-  ${ al_user_bundle.download_list_html() }
-  
-
-  ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
-
-progress: 100
 ---
 objects:
   - simpmotion_post_interview_instructions: ALDocument.using(title="Instructions", filename="simpmotion_next_steps.docx", enabled=True, has_addendum=False, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
@@ -1389,14 +1093,14 @@ attachments:
       # inserts only the "safe" number of characters here, seems to be set via the trigger value, formatting
       - "motion_body": ${ indent(indent(single_to_double_newlines(simpmotion_attachment.safe_value('motion_body', preserve_newlines=True)))) }
       - "signature_date": |
-            % if esign == True:
+            % if MLH_esign == True:
             ${ signature_date }
             % else:
             ${ '' }
             % endif
       # It's a signature: test which file version this is; leave empty unless it's the final version)
       - "users_signature_1": |
-            % if esign == True:
+            % if MLH_esign == True:
             ${ users[0] }
             % else:
             ${ '' }
