@@ -1,4 +1,3 @@
- # commenting here so there's something to commit
 ---
 include:
   - docassemble.AssemblyLine:assembly_line.yml
@@ -58,6 +57,18 @@ code: |
     other_side_label = word('plaintiff or petitioner')
     other_side_label_plural = word('plaintiffs or petitioners')
     user_label = word('defendant or respondent')
+---
+code: |
+  if user_ask_role == 'plaintiff':
+    plaintiffs = users
+    defendants = other_parties
+    plaintiffs_attorneys = user_side_lawyers
+    defendants_attorneys = other_party_lawyers
+  elif user_ask_role == 'defendant':
+    defendants = users
+    plaintiffs = other_parties
+    defendants_attorneys = user_side_lawyers
+    plaintiffs_attorneys = other_party_lawyers
 ---
 sections:
   - review_simpmotion: Review your answers
@@ -148,11 +159,15 @@ code: |
   if has_hearing_info == False:
     no_hearing_info_ok
   set_progress(88)
-  users.gather()
-  set_parts(subtitle=str(users))
+  set_parts(subtitle=str(users[0]))
   MLH_esign
   if MLH_esign == True:
     signature_date
+  # is it necessary to call these so that their value can be accessed when filling form?
+  plaintiffs
+  defendants
+  plaintiffs_attorneys
+  defendants_attorneys
   interview_order_simpmotion = True
 ---
 ###################### Main order ######################
@@ -1019,62 +1034,71 @@ attachments:
       - "docket_number": ${ docket_number }
       - "trial_court_address_on_one_line": ${ the_court.address.on_one_line() }
       - "trial_court_phone_number": ${ the_court.phone }
-      # removes plaintiff from header if there are multiple user plaintiffs, if plaintiff not user,         won't collect plaintiff name anyway
       - "plaintiffs_name": |
-            % if user_ask_role == 'plaintiff' and multiple_users == True:
-            ${ '' }
-            % else:
+            % if user_ask_role == 'defendant' or (user_ask_role == 'plaintiff' and (multiple_users == False or user_first_party == True)):
             ${ plaintiffs[0] }
-            % endif
-      # as above for when defendant is user    
-      - "defendants_name": |       
-            % if user_ask_role == 'defendant' and multiple_users == True:
-            ${ '' }
             % else:
+            ${ plaintiffs[1] }
+            % endif
+      - "defendants_name": |       
+            % if defendants.number_gathered() == 0:
+            ${ "N/A" }
+            % elif user_ask_role == 'plaintiff' or (user_ask_role == 'defendant' and (multiple_users == False or user_first_party == True)):
             ${ defendants[0] }
+            % else:
+            ${ defendants[1] }
             % endif
       - "plaintiffs_attorney_bar_number": |
-            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
-            ${ plaintiffs_attorney_bar_number }
+            % if (user_ask_role == 'plaintiff' and first_party_user_side_has_lawyer == True) or (user_ask_role == 'defendant' and other_side_has_lawyer == True):
+            ${ plaintiffs_attorneys[0].bar_number }
             % endif
       - "plaintiffs_attorney_name": |
-            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
-            ${ plaintiffs_attorney[0] }
-            % elif ((user_ask_role == 'plaintiff' and multiple_users == False) or (user_ask_role == 'defendant' and plaintiffs.target_number == 1)) and plaintiffs_attorney.target_number == 0:
+            % if (user_ask_role == 'plaintiff' and (multiple_users == False or user_first_party == True or first_party_user_side_has_lawyer == False)) or (user_ask_role == 'defendant' and other_side_has_lawyer == False):
             Self-represented
+            % else:
+            ${ plaintiffs_attorneys[0] }
             % endif
       - "defendants_attorney_name": |
-            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
-            ${ defendants_attorney[0] }
-            % elif ((user_ask_role == 'defendant' and multiple_users == False) or (user_ask_role == 'plaintiff' and defendants.target_number == 1)) and defendants_attorney.target_number == 0:
+            % if defendants.number_gathered() == 0:
+            ${ 'N/A' }
+            % elif (user_ask_role == 'plaintiff' and other_side_has_lawyer == False) or (user_ask_role == 'defendant' and (multiple_users == False or user_first_party == True or first_party_user_side_has_lawyer == False)):
             Self-represented
+            % else:
+            ${ defendants_attorneys[0] }
             % endif
       - "defendants_attorney_bar_number": |
-            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
-            ${ defendants_attorney_bar_number }
+            % if (user_ask_role == 'defendant' and first_party_user_side_has_lawyer == True) or (user_ask_role == 'plaintiff' and other_side_has_lawyer == True):
+            ${ defendants_attorneys[0].bar_number }
             % endif
-      # uses attorney address as default if there is 1 attorney for all plaintiffs, otherwise uses plaintiff address as default. 
       - "plaintiffs_attorney_address_block": |
-            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
-            ${ plaintiffs_attorney[0].address.block() }
+            % if (user_ask_role == 'plaintiff' and multiple_users == True and user_first_party == False and first_party_user_side_has_lawyer == True) or (user_ask_role == 'defendant' and other_side_has_lawyer == True):
+            ${ plaintiffs_attorneys[0].address.block() }
+            % elif (user_ask_role == 'plaintiff' and multiple_users == True and user_first_party == False and first_party_user_side_has_lawyer == False):
+            ${ plaintiffs[1].address.block() }
             % else:
             ${ plaintiffs[0].address.block() }
             % endif
       - "defendants_attorney_address_block": |
-            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
-            ${ defendants_attorney[0].address.block() }
+            % if (user_ask_role == 'defendant' and multiple_users == True and user_first_party == False and first_party_user_side_has_lawyer == True) or (user_ask_role == 'plaintiff' and other_side_has_lawyer == True):
+            ${ defendants_attorneys[0].address.block() }
+            % elif (user_ask_role == 'defendant' and multiple_users == True and user_first_party == False and first_party_user_side_has_lawyer == False):
+            ${ defendants[1].address.block() }
             % else:
             ${ defendants[0].address.block() }
             % endif     
       - "plaintiffs_attorney_phone_number": |
-            % if plaintiffs_attorney.target_number == 1 and (plaintiffs.target_number == 1 or plaintiffs_share_lawyer == True):
-            ${ plaintiffs_attorney[0].phone_number }
+            % if (user_ask_role == 'plaintiff' and multiple_users == True and user_first_party == False and first_party_user_side_has_lawyer == True) or (user_ask_role == 'defendant' and other_side_has_lawyer == True):
+            ${ plaintiffs_attorneys[0].phone_number }
+            % elif (user_ask_role == 'plaintiff' and multiple_users == True and user_first_party == False and first_party_user_side_has_lawyer == False):
+            ${ plaintiffs[1].phone_number }
             % else:
             ${ plaintiffs[0].phone_number }
             % endif
       - "defendants_attorney_phone_number": |
-            % if defendants_attorney.target_number == 1 and (defendants.target_number == 1 or defendants_share_lawyer == True):
-            ${ defendants_attorney[0].phone_number }
+            % if (user_ask_role == 'defendant' and multiple_users == True and user_first_party == False and first_party_user_side_has_lawyer == True) or (user_ask_role == 'plaintiff' and other_side_has_lawyer == True):
+            ${ defendants_attorneys[0].phone_number }
+            % elif (user_ask_role == 'defendant' and multiple_users == True and user_first_party == False and first_party_user_side_has_lawyer == False):
+            ${ defendants[1].phone_number }
             % else:
             ${ defendants[0].phone_number }
             % endif
