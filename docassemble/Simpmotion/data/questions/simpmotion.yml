@@ -902,6 +902,18 @@ review:
       % if defined("motion_body"):
         Make sure you save your motion somewhere else first, so you don't lose your work. 
       % endif
+  - Edit:
+    - user_ask_role
+    - recompute:
+      - user_label
+      - other_side_label
+      - other_side_label_plural
+      - plaintiffs
+      - defendants
+      - plaintiffs_attorneys
+      - defendants_attorneys
+    button: |
+      **You are a**: ${ user_label }
   - Edit: 
       - docket_number
       - county_choice
@@ -1018,7 +1030,7 @@ attachments:
   - name: simpmotion attachment
     filename: simpmotion.pdf     
     variable name: simpmotion_attachment[i]        
-    skip undefined: True
+    skip undefined: False
     pdf template file: simpmotion.pdf
     editable: False
     fields:
