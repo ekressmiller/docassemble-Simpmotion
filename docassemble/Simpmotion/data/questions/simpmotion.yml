@@ -24,9 +24,9 @@ metadata:
   al_weaver_version: "1.7.0"
   generated on: "2022-08-19"
 ---
-  # overflow--sets default message
-  code: |
-    AL_DEFAULT_OVERFLOW_MESSAGE = " [PLEASE SEE ATTACHMENT.]"
+# overflow--sets default message
+code: |
+  AL_DEFAULT_OVERFLOW_MESSAGE = " [PLEASE SEE ATTACHMENT.]"
 ---
 code: |
   github_repo_name = 'docassemble-Simpmotion'
@@ -35,7 +35,14 @@ code: |
   interview_short_title = "File a Notice of Hearing and Motion in your case"
 ---
 code: |
-  al_form_type = "existing_case" 
+  al_form_type = "existing_case"
+---
+code: |
+  MLH_time_min = "15"
+  MLH_time_max = "30"
+  MLH_instructions_included = True
+  MLH_form_type = "form"
+  MLH_case_type_language = ""
 ---
 objects:
   #default way to gather is by asking are there any, and then is there another, so if don't say anything it just does that.  Adding ".using(ask_number=True)" makes it ask for number instead.  Must then set target number somewhere.  
@@ -77,20 +84,22 @@ code: |
   allowed_courts = all_variables(special="metadata")["allowed courts"]
   nav.set_section('review_simpmotion')
   welcome
-  using_this_tool
+  MLH_intro_time
   navigation_and_saving
-  pii_policy
-  if pii_policy == False:
-    pii_policy_exit
+  if MLH_intro_agree_no_pii == False:
+    MLH_intro_agree_no_pii_exit
   existing_case
   if existing_case == False:
     existing_case_exit
   set_progress(11)
+  criminal_case
+  if criminal_case == True:
+    criminal_case_exit
   probate_case
   if probate_case == True:
     probate_case_exit
   right_tool
-  if right_tool == False:
+  if right_tool == True:
     right_tool_exit
   approved_form
   if approved_form == True:
@@ -151,7 +160,7 @@ code: |
   trial_court.name.text = "Trial Court"
   county_choice
   court_index
-  #calling value of the_court to load AL_court_loader object
+  # calling value of the_court to load AL_court_loader object
   the_court
   set_progress(77)
   motion_title
@@ -167,8 +176,8 @@ code: |
   set_progress(88)
   users.gather()
   set_parts(subtitle=str(users))
-  esign
-  if esign == True:
+  MLH_esign
+  if MLH_esign == True:
     signature_date
   interview_order_simpmotion = True
 ---
@@ -219,69 +228,32 @@ terms:
     Green words are legal terms or a short way of referring to something that needs more explanation. The definition or explanation pops up when you tap the green words.
 continue button field: welcome
 ---
-id: Using this Tool
-question: |
-  Using this Tool
-subquestion: |
-  This tool can help you prepare a Notice of Hearing and Motion form in 3 steps:
-  
-  **Step 1.** Answer questions that will fill in your form for you.  It should take you between 15 and 30 minutes to answer all the questions.
-  
-  **Step 2.** Preview the completed form.
-  
-  **Step 3.** Download and save the final form. Your personalized Notice of Hearing and Motion along with a checklist of step-by-step instructions will be ready after you have answered all the questions. 
-  
-  **You will need to file the finished form in court on your own.** We will provide directions when you are finished with the form.
-  
-continue button field: using_this_tool
----
 id: Navigation and Saving Your Form
 question: |
   Navigation and Saving Your Form
 subquestion: |
-  If you make a mistake at any time, you can use the Undo button below to go back. You can also see and edit some of your earlier answers by clicking on the "Review your answers" button. If you can't finish today, you can save your answers by creating a username and password. This lets you log back into the site later and finish, or go back and change any of your answers. 
+  If you make a mistake at any time, you can use the **< ${ MLH_back_button_label } >** button below to go back. You can also see and edit some of your earlier answers by clicking on the "Review your answers" button.
   
-  If you want to go back to an interview you started before, make sure you are logged in. Then go to the menu at the top of the screen and select “My Interviews”
+  <h2 class="h3">Saving Your Answers</h2>
+
+  % if user_logged_in():
+  Since you **are signed in** to your account, just click the **${ MLH_continue_button_label}** button to save your progress.
+  % else:
+  You are **not signed in** or have **not created** an account yet.
   
-  Make note of your username and password.
+  * Go to the menu at the top of the screen and click "Sign up or sign in to save answers". Make note of your username and password.
+  % endif
 continue button field: navigation_and_saving
----
-id: Private Information
-question: |
-  Private Information
-subquestion: |
-  To protect privacy, you **cannot** include personal identifying information in public documents that are filed in court. Personal identifying information includes:
- 
-  * Date of birth
-  * Social security or national identification number
-  * Driver’s license or state identification number
-  * Passport number
-  * Financial account numbers
-  
-  **If a question doesn't specifically ask for personal identifying information, do not include it in your answers.** If this type of information is needed, this tool will specifically ask for the information and it will go on a separate non-public form that you will file along with the other documents. This DIY tool will automatically produce that form if you need it.  
-  
-  Do you understand that you should only enter personal identifying information if this tool specifically asks for it?
-yesno: pii_policy
----
-event: pii_policy_exit
-question: |
-  You cannot continue to use the tool.
-subquestion: |
-  You cannot continue with this tool unless you understand that you should not enter any personal identifying information that the tool does not specifically ask for. 
-  
-  If you made a mistake, click the **Undo** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
-buttons:
-  - Exit: exit
-    url: https://michiganlegalhelp.org
 ---
 id: You Must Already Have a Court Case to Use This Tool
 question: |
   You Must Already Have a Court Case to Use This Tool
 subquestion: |
   A motion is a way to ask a judge to do something in an existing court case. You **cannot use a motion to start a new case**. You will need information such as the judge, court, and case number of the ongoing case to fill out a motion. It will help if you have other documents from the case (like the complaint, petition, or answer) nearby so you can look for information there. 
-  
-  Do you have an existing case in a Michigan court?
-yesno: existing_case
+fields:
+  - Do you have an existing case in a Michigan court?: existing_case
+    datatype: yesnoradio
+    label above field: True
 ---
 event: existing_case_exit
 question: |
@@ -289,7 +261,28 @@ question: |
 subquestion: |
   Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. You must already have a case in court to file a motion. Michigan Legal Help may have information about starting the kind of case you need. Use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to search for information or to find a lawyer or legal services in your area. 
   
-  If you made a mistake, click the **Undo** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+  If you made a mistake, click the **${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+buttons:
+  - Exit: exit
+    url: https://michiganlegalhelp.org
+---
+id: Is this a criminal case
+question: |
+  Are you Filing in a Criminal Case?
+fields:
+  - Is your case a criminal case?: criminal_case
+    datatype: yesnoradio
+    label above field: True
+---
+event: criminal_case_exit
+question: |
+  You cannot continue to use the tool
+subquestion: |
+  Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. This tool was not designed for criminal cases. 
+  
+  You may want to speak to a lawyer. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to find a lawyer or legal services office in your area.
+  
+  If you made a mistake, click the **< ${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
 buttons:
   - Exit: exit
     url: https://michiganlegalhelp.org
@@ -298,12 +291,19 @@ id: Is this a probate case
 question: |
   Are you Filing in a Probate Case?
 subquestion: |
-  Is the case a probate case? Examples of probate cases include cases to distribute property after someone dies, guardianships, and conservatorships. 
+  Is the case a probate case? Examples of probate cases include:
+  
+    * cases to distribute property after someone dies 
+    * guardianships  
+    * conservatorships 
 
-  If you are not sure if you have a probate case, look for a court document from the case. The top of each court document has information about the case. This will often list whether the court is a probate court. You can also check the two-letter case-type code at the end of the case number. To see a full list of the probate case codes visit [the State Court Administrative Office list of case-type codes](https://www.courts.michigan.gov/siteassets/court-administration/standardsguidelines/casefile/cf_casetypecodes.pdf) and scroll down to the “Probate” section.
-
-  Is your case a probate case?
-yesno: probate_case
+  If you are not sure if you have a probate case, look for a court document from the case. The top of each court document has information about the case. This will often list whether the court is a probate court.
+  
+  You can also check the two-letter case-type code at the end of the case number. To see a full list of the probate case codes visit [the State Court Administrative Office list of case-type codes](https://www.courts.michigan.gov/siteassets/court-administration/standardsguidelines/casefile/cf_casetypecodes.pdf) and scroll down to the “Probate” section.
+fields:
+  - Is your case a probate case?: probate_case
+    datatype: yesnoradio
+    label above field: True
 ---
 event: probate_case_exit
 question: |
@@ -311,7 +311,7 @@ question: |
 subquestion: |
   Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. Probate cases have different procedural rules than other cases. You may want to speak to a lawyer. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to find a lawyer or legal services office in your area.
   
-  If you made a mistake, click the **Undo** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+  If you made a mistake, click the **${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
 buttons:
   - Exit: exit
     url: https://michiganlegalhelp.org
@@ -327,7 +327,10 @@ subquestion: |
   **Follow this [link to a list of all the tools on Michigan Legal Help](https://michiganlegalhelp.org/all-forms).**
   
   Do any of the tools on that page fit what you are trying to do?
-noyes: right_tool
+fields:
+  - Do any of the tools on that page fit what you are trying to do?: right_tool
+    datatype: yesnoradio
+    label above field: True
 ---
 event: right_tool_exit
 question: |
@@ -335,7 +338,7 @@ question: |
 subquestion: |
   This tool is not right for you. Please use the tool from [this page](https://michiganlegalhelp.org/all-forms) that applies to you instead. 
   
-  If you made a mistake, click the **Undo** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+  If you made a mistake, click the **${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
 buttons:
   - Exit: exit
     url: https://michiganlegalhelp.org
@@ -347,7 +350,10 @@ subquestion: |
   The State Court Administrative Office (SCAO) has court forms for some kinds of motions. Follow this [link to the list of SCAO-approved forms](https://www.courts.michigan.gov/SCAO-forms/#Index) to find out if they have a form for the kind of request you need in your case. 
   
   Did you find a form that applies to your case?
-yesno: approved_form
+fields:
+  - Did you find a form that applies to your case?: approved_form
+    datatype: yesnoradio
+    label above field: True
 ---
 event: approved_form_exit
 question: |
@@ -355,7 +361,7 @@ question: |
 subquestion: |
   This tool is not right for you. Instead of using this tool to prepare a motion, please use the SCAO-approved form that applies to your case. 
   
-  If you made a mistake, click the **Undo** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+  If you made a mistake, click the **${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
 buttons:
   - Exit: exit
     url: https://michiganlegalhelp.org
@@ -364,11 +370,11 @@ id: You May Want to Speak with a Lawyer
 question: |
   You May Want to Speak with a Lawyer
 subquestion: |
-  This tool will help you to fill out a Notice of Hearing and Motion. There are many kinds of motions. Some have specific things you need to prove, and if you do not meet all of the requirements the judge will not grant your motion. 
+  This tool will help you to fill out a Notice of Hearing and Motion. There are many kinds of motions. Some have specific things you need to prove. If you do not meet all of the requirements, the judge will not grant your motion. 
   
-  This tool will **not** guide you through the legal elements that you would need to show to have a judge grant your motion because that depends on the kind of case and kind of motion you are filing. This tool will only help you fill in the form. What you write and argue is up to you.
+  This tool will **not** guide you through the legal elements that you need to show because that depends on the kind of case and kind of motion you are filing. This tool will only help you fill in the form. What you write and argue is up to you.
   
-  You may want to speak to a lawyer. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to find a lawyer or legal services office in your area if you want more help.
+  You may want to talk to a lawyer. ${ MLH_GUIDE_FULL }
 continue button field: speak_to_lawyer
 ---
 id: what is the user s role?
@@ -380,40 +386,15 @@ subquestion: |
   For **this** Notice of Hearing and Motion form you are called the “moving party” because you are filing the motion.  
   
   For your whole case, you are either the Plaintiff, the Defendant, the Petitioner, or the Respondent. 
-  
-  What party are you in your case?
-  ${ collapse_template(help_user_ask_role_template) }
-# abortive attempt to get more specific on user role below, leaving for now
-# field: user_role
-# dropdown:
-#   - Plaintiff
-#   - Petitioner
-#   # - Defendant
-#   - Respondent
-# ---
-# code: |
-#   if user_role == 'Plaintiff':
-#     plaintiffs = users
-#     defendants = other_parties
-#     user_started_case = True
-#   elif user_role == 'Petitioner':
-#     petitioners = users
-#     respondents = other_parties
-#     user_started_case = True
-#   elif user_role == 'Defendant':
-#     defendants = users
-#     plaintiffs = other_parties
-#     user_started_case = False
-#   elif user_role == 'Respondent':
-#     respondents = users
-#     petitioners = other_parties
-#     user_started_case = False
 fields: 
-  - no label: user_ask_role
+  - What party are you in your case?: user_ask_role
+    label above field:
     datatype: radio
     choices:
       - I am the Plaintiff or Petitioner: plaintiff
       - I am the Defendant or Respondent: defendant
+  - note: |
+      ${ collapse_template(help_user_ask_role_template) }
   - note: |
       Okay, you are the **Plaintiff** or **Petitioner** in this case. The other 
       side is the Defendant or Respondent.
@@ -426,18 +407,6 @@ fields:
     show if:
       variable: user_ask_role
       is: "defendant"
- # commented out because using different gather method
- # ---
- # id: any other opposing parties
- # question: |
- #   % if users==plaintiffs:
- #   Is there any other defendant or respondent in this case?
- #   % else:
- #   Is there any other plaintiff or petitioner in this case?
- #   % endif
- # fields:
- #   - no label: other_parties.there_is_another
- #     datatype: yesnoradio
 ---
 template: help_user_ask_role_template
 subject: |
@@ -445,15 +414,14 @@ subject: |
 content: |
   You can find the parties by looking at the first page of an existing court document, like a complaint, petition, or answer. The top of the first page is the “caption” which has the basic case information. This area will list all of the parties in the case with their titles.
 
-  If you were the first person to file a form to start this case, you are the "Plaintiff" or the "Petitioner."  If someone else started this case by filing in court, you
-  are the "Defendant" or the "Respondent." 
+  If you were the first person to file a form to start this case, you are the "Plaintiff" or the "Petitioner."  If someone else started this case by filing in court, you are the "Defendant" or the "Respondent." 
 ---
 sets:
   - other_parties[i].name.first
   - other_parties[i].name.last
   - other_parties[i].name.middle
   - other_parties[i].name.suffix
-id: names of opposing parties
+id: name of opposing party
 question: |
   % if users==plaintiffs:
   Name of defendant or respondent
@@ -488,26 +456,6 @@ fields:
   - code: |
       defendants_attorney[i].name_fields()
 ---
- # commented out because using different gather method now
- # id: any other users
- # question: |
- #   % if al_form_type in ['starts_case','existing_case','appeal']:
- #   % if users==plaintiffs:
- #   Is there any other plaintiff or petitioner in this case?
- #   % else:
- #   Is there any other defendant or respondent in this case?
- #   % endif  
- #   % else:
- #   Is anyone else adding their name to this form with you?
- #   % endif
- # subquestion: |
- #   % if len(users.elements) > 1:  
- #   So far you have told us about ${comma_and_list(users.complete_elements())}.
- #   % endif
- # fields:
- #   - no label: users.there_is_another
- #     datatype: yesnoradio
- # ---
 sets:
   - users[i].name.first
   - users[i].name.last
@@ -524,34 +472,6 @@ fields:
   - code: |
       users[i].name_fields()
 ---
- #saved copy of how was doing this before--useful if don't need to limit number of attorneys and want to use default gather method
-# id: other party has attorney
- # question: |
- #   % if users==plaintiffs:
- #   % if len(other_parties.elements) > 1:  
- #   Do the defendants or respondents have a lawyer?
- #   % else:
- #   Does the defendant or respondent have a lawyer?
- #   % endif
- #   % else: 
- #   % if len(other_parties.elements) > 1:  
- #   Do the plaintiffs or petitioners have a lawyer?
- #   % else:
- #   Does the plaintiff or petitioner have a lawyer?
- #   % endif
- #   % endif
- # fields:
- #   - no label: defendants_attorney.there_are_any
- #     datatype: yesnoradio
- #     show if: 
- #       code: |  
- #         users == plaintiffs
- #   - no label: plaintiffs_attorney.there_are_any
- #     datatype: yesnoradio
- #     show if: 
- #       code: |  
- #         users == defendants
- # ---
 id: other party has attorney
 question: |
   % if users==plaintiffs:
@@ -814,9 +734,11 @@ id: Motion Title
 question: |
   Motion Title
 subquestion: |
-  Fill in the blank below with the title of your motion. This must be short and fit on one line. It should briefly tell the judge what you are asking for. 
+  Give your motion a title. This must be short and fit on one line. It should briefly tell the judge what you are asking for. 
   
-  A motion is a document you use to ask the judge to do something. If you are having trouble deciding what to name the motion, think of the word “Motion” as meaning “I want to ask the judge” For example, if you are getting divorced and want to waive the waiting period you might  say “I want to ask the judge to waive the statutory waiting period.” In that situation the motion title could be “Motion to Waive the Statutory Waiting Period.”
+  A motion is a document you use to ask the judge to do something. If you are having trouble deciding what to name the motion, think of the word “Motion” as meaning “I want to ask the judge”.
+  
+  For example, if you are getting divorced and want to waive the waiting period you might  say “I want to ask the judge to waive the statutory waiting period.” In that situation the motion title could be “Motion to Waive the Statutory Waiting Period.”
 under: |  
   If you are not sure of the title you can leave this blank and neatly write it by hand before you file it in court.
 fields:
@@ -836,17 +758,21 @@ subquestion: |
   * **Be brief**. Give good reasons why the judge should do what you are asking but make sure that you stay focused on the specific issues related to the request.
   * **Include attachments if they support your arguments**. If you have a document or photo that supports a statement you make, you can attach an exhibit. For example, you could write: “My spouse has been physically abusive and I got a Personal Protection Order in 2019. See Exhibit A.” If you reference any exhibits in your motion be sure to label and attach them to your finished forms before filing in court. In the example here you would clearly write “Exhibit A” on a copy of the 2019 protection order and attach it to the motion.
   * **Do your best to understand what rules the judge will follow when deciding your motion**. For example, if the law says that the judge can grant a motion in your case if you show a change in circumstances, be sure to explain the change in circumstances. If the court rules say you must show good cause, explain the good cause. It is a good idea to use those specific words. For example, if you need to show good cause, say “There is good cause because…”
-  * **Do not include any personal identifying information**. Personal identifying information includes: date of birth, social security or national identification number, driver’s license or state identification number, passport number, and financial account numbers. If a court rule or law requires you to include this information or if the information is necessary for identification purposes you must fill out form [MC 97](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97.pdf) (if the information is related to a defendant, respondent, or decedent) or form [MC 97a](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97a.pdf) (if the information is about a plaintiff, petitioner, or anyone else not included in MC 97). Include the information on MC 97 and do not include it in the Motion. Instead, include a reference in the Motion to ask the judge to see MC 97 for the information.
+  * **Do not include any {personal identifying information}**. If you need to include this type of information, you must fill out form [MC 97](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97.pdf) (if the information is related to a defendant, respondent, or decedent) or form [MC 97a](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97a.pdf) (if the information is about a plaintiff, petitioner, or anyone else not included in MC 97). Include the information on MC 97 and do not include it in the Motion. Instead, include a reference in the Motion to ask the judge to see MC 97 for the information.
   
-  Use the space below to tell the judge what you want and to give reasons for it. If you can't finish writing what you want to say right now, go to the menu at the top of the screen and click "Sign up or sign in to save answers".  If you are already signed in, click "Next" to save your work. 
+  Use the space below to tell the judge what you want and to give reasons for it. If you can't finish writing what you want to say right now, go to the menu at the top of the screen and click "Sign up or sign in to save answers".  If you are already signed in, click **Continue** to save your work. 
+terms:
+  personal identifying information: |
+    Personal identifying information includes: date of birth, social security or national identification number, driver’s license or state identification number, passport number, and financial account numbers.
 fields:
   - "Your motion": motion_body
+    label above field: True
     input type: area
     rows: 12
     hint: Type your motion here.
     # maxlength: 1209 [took out maxlength because added overflow field]
 under: |  
-  **Careful!** If you click "Undo," you will lose what you have typed here.
+  **Careful!** If you click **< ${ MLH_back_button_label }** you will lose what you have typed here.
 ---
 id: Do you know hearing time and place
 question: |
@@ -890,14 +816,6 @@ if: |
 id: Will the hearing be held at the courthouse
 question: |
   Where will the hearing be?
-# buttons:
-#  - Yes:
-#      code: |
-#        hearing_at_court = True
-#        undefine('hearing_address_on_one_line')
-#  - No:
-#      code: |
-#        hearing_at_court = False
 fields:
   - "Will the hearing be in person at the courthouse?": hearing_at_court
     datatype: yesnoradio
@@ -907,20 +825,6 @@ fields:
       variable: hearing_at_court 
       is: False  
     maxlength: 50 
-# ---
-#  # if modifier is needed to make this work as followup question on review screen
-# if: |
-#   hearing_at_court == False
-# id: What is the address for the hearing
-# question: |
-#   Where will the hearing be?
-# subquestion: |
-#   * Type the address if it will be at a physical location.
-#   * If the hearing will be online or by phone, briefly explain.
-# fields:
-#   - "Address of the hearing": hearing_address_on_one_line
-#     maxlength: 50
-#     required: False
 ---
 id: OK Not to Have Hearing Info
 continue button field: no_hearing_info_ok
@@ -936,15 +840,8 @@ subquestion: |
   If you are not sure, you can leave this blank and neatly write it by hand before you file it in court.
 fields:
   - "Date of Service": service_date
+    required: false
     datatype: date
----
-question: |
-  Electronic Signature
-subquestion: |
-  This tool can put "*/s/ ${ users[0] }*" where you would sign your name so you do not have to sign the form by hand. The court will accept this as your signature.
-
-  Would you like to add your electronic signature to your form? 
-yesno: esign
 ---
  # assumes the user has no attorney
 code: |
@@ -968,16 +865,6 @@ subquestion: |
   
   Remember to come back to this window to continue and sign your form.
 continue button field: simpmotion_preview_question   
----
-# commented out because not using signature field
-# code: |
-#   signature_fields = ['users.signature_1']
-# ---
-code: |
-  # This is a placeholder for the addresses that will be searched
-  # for matching address to court. Edit if court venue is based on 
-  # a different address than the user's
-  addresses_to_search = [user.address for user in users]
 ---
 continue button field: review_screen_user_side
 id: review screen--user side of case
@@ -1010,7 +897,7 @@ review:
 
       **Check your answers before going on.**
       
-      If any of this information is wrong, use the "Undo" button to go back and fix it now. Make sure these answers are correct before you continue.  
+      If any of this information is wrong, use the **< ${ MLH_back_button_label }** button to go back and fix it now. Make sure these answers are correct before you continue.  
 ---
 continue button field: review_screen_other_side
 id: review screen--other side of case
@@ -1093,7 +980,7 @@ review:
 
       **Check your answers before going on.**
       
-      If any of this information is wrong, use the "Undo" button to go back and fix it now. Make sure these answers are correct before you continue.  
+      If any of this information is wrong, use the **< ${ MLH_back_button_label }** button to go back and fix it now. Make sure these answers are correct before you continue.  
 ---
 id: simpmotion overall review screen
 event: review_simpmotion
@@ -1182,12 +1069,12 @@ review:
       * ${ indent(single_to_double_newlines(motion_body)) } 
       % endif
   - Edit: 
-      - esign
+      - MLH_esign
     button: |
       **Your Electronic Signature**
         
       * Do you want to E-Sign these forms?---
-      % if esign == True:
+      % if MLH_esign == True:
       **Yes**
       % else:
       **No**
@@ -1326,20 +1213,20 @@ attachments:
       - "hearing_at_court_yes": ${ hearing_at_court }
       - "hearing_at_court_no": ${ not hearing_at_court }
       - "hearing_address_on_one_line": |
-            % if hearing_at_court == False:
+            % if has_hearing_info and not hearing_at_court:
             ${ hearing_address_on_one_line }
             % endif
       # inserts only the "safe" number of characters here, seems to be set via the trigger value, formatting
       - "motion_body": ${ indent(indent(single_to_double_newlines(simpmotion_attachment.safe_value('motion_body', preserve_newlines=True)))) }
       - "signature_date": |
-            % if esign == True:
+            % if MLH_esign == True:
             ${ signature_date }
             % else:
             ${ '' }
             % endif
       # It's a signature: test which file version this is; leave empty unless it's the final version)
       - "users_signature_1": |
-            % if esign == True:
+            % if MLH_esign == True:
             ${ users[0] }
             % else:
             ${ '' }
