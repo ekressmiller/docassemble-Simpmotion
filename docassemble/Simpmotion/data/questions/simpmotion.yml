@@ -863,35 +863,43 @@ review:
       **Your name**
 
         * ${ users[0] }
-  - note: |        
+  - note: |
       **Your information**
 
         * ${ users[0].address.block() }
         * Phone: ${ users[0].phone_number }
-                  
-      You are the first (or the only) ${ user_label } listed in the case.
-  - note: |        
+
+      % if not multiple_users:
+      You are the only ${ user_label } listed in the case.
+      % elif user_first_party:
+      You are the first ${ user_label } listed in the case.
+      % endif
+    show if: not multiple_users or user_first_party
+  - note: |
       **First listed ${ user_label }**
 
         * ${ users[1] }
-  - note: |            
+    show if: multiple_users and not user_first_party
+  - note: |
       **${ users[1] }'s address and phone number**
       
         * ${ users[1].address.block() }
         * Phone: ${ users[1].phone_number }
-  - note: |       
+    show if: multiple_users and not user_first_party and not first_party_user_side_has_lawyer
+  - note: |
       **Lawyer information for ${ users[1] }**
       
         * ${ user_side_lawyer }
         * ${ user_side_lawyer.address.block() }
         * Phone: ${ user_side_lawyer.phone_number }
         * Bar Number: ${ user_side_lawyer.bar_number }
+    show if: multiple_users and not user_first_party and first_party_user_side_has_lawyer
   - note: |
       _____________________
 
       **Check your answers before going on.**
       
-      If any of this information is wrong, use the **< ${ MLH_back_button_label }** button to go back and fix it now. Make sure these answers are correct before you continue.  
+      If any of this information is wrong, click **Review your answers** to fix it now. Make sure these answers are correct before you continue.  
 ---
 continue button field: review_screen_other_side
 id: review screen--other side of case
@@ -911,6 +919,7 @@ review:
       
         * ${ other_parties[0].address.block() }
         * Phone: ${ other_parties[0].phone_number }
+    show if: not other_side_has_lawyer
   - note: |       
       **Lawyer information for ${ other_parties[0] }**
       
@@ -919,12 +928,13 @@ review:
         * ${ other_party_lawyer.address.block() }
         * Phone: ${ other_party_lawyer.phone_number }
         * Bar Number: ${ other_party_lawyer.bar_number }
+    show if: other_side_has_lawyer
   - note: |
       _____________________
 
       **Check your answers before going on.**
       
-      If any of this information is wrong, use the **< ${ MLH_back_button_label }** button to go back and fix it now. Make sure these answers are correct before you continue.  
+      If any of this information is wrong, click on **Review your answers** to fix it now. Make sure these answers are correct before you continue.
 ---
 id: simpmotion overall review screen
 event: review_simpmotion
@@ -950,7 +960,63 @@ review:
       <h2 class="h3">${ user_label_plural }</h2>
   - Edit: users.revisit
     button: |
-      ${ users }
+      ${ user_label_plural } names: ${ users }
+  - Edit:
+    - multiple_users
+    - recompute:
+      - add_or_remove_users
+    button: |
+      Are there multiple users? ${ word(yesno(multiple_users)) }
+  - Edit:
+    - user_first_party
+    - recompute:
+      - add_or_remove_users
+    button: |
+      Are you the first party listed in the case?: ${ word(yesno(user_first_party)) }
+  - Edit:
+    - users[0].address.address
+    - users[0].phone_number
+    button: |
+      **Your contact information:**
+
+      ${ users[0].address.on_one_line() }  
+      ${ users[0].phone_number }
+    show if: not multiple_users or user_first_party
+  - Edit:
+    - users[1].address.address
+    - users[1].no_phone_number
+    button: |
+      **${ users[1] } contact information:**
+
+      ${ users[1].address.on_one_line() }  
+      ${ users[1].phone_number if not users[1].no_phone_number else word("No phone number") }
+    show if: multiple_users and not user_first_party and not first_party_user_side_has_lawyer
+  - Edit:
+    - first_party_user_side_has_lawyer
+    - recompute:
+      - add_or_remove_users
+    button: |
+      <strong>
+      % if first_party_user_side_has_lawyer:
+      ${ user_side_lawyer } is ${ users[1] }'s lawyer.
+      % else:
+      ${ users[1] } does not have a lawyer.
+      % endif
+      </strong>
+    show if: multiple_users and not user_first_party
+  - Edit:
+    - user_side_lawyer.address.address
+    - user_side_lawyer.phone_number
+    - user_side_lawyer.bar_number
+    button: |
+      **${ user_side_lawyer } contact information:**
+
+      ${ user_side_lawyer.address.on_one_line() }
+
+      ${ user_side_lawyer.phone_number }
+
+      ${ user_side_lawyer.bar_number }
+    show if: multiple_users and not user_first_party and first_party_user_side_has_lawyer
   - note: |
       <h2 class="h3">${ other_side_label_plural }</h2>
   - Edit:
@@ -965,6 +1031,40 @@ review:
       There is not a defendant or respondent in your case.
       % endif
       </strong>
+  - Edit:
+    - other_side_has_lawyer
+    - recompute:
+      - force_regather_others
+    button: |
+      <strong>
+      % if other_side_has_lawyer:
+      ${ other_parties } has a lawyer, ${ other_party_lawyer }.
+      % else:
+      ${ other_parties } doesn't have a lawyer.
+      % endif
+      </strong>
+    show if: len(other_parties) > 0
+  - Edit:
+    - other_parties[0].address.address
+    - other_parties[0].no_phone_number
+    button: |
+      **${ other_parties } contact information:**
+
+      ${ other_parties[0].address.on_one_line() }
+      ${ other_parties[0].phone_number if not other_parties[0].no_phone_number else word("No phone number") }
+    show if: len(other_parties) > 0 and not other_side_has_lawyer
+  - Edit:
+    - other_party_lawyer.address.address
+    - other_party_lawyer.phone_number
+    - other_party_lawyer.bar_number
+    button: |
+      **${ other_party_lawyer } contact information:**
+
+      ${ other_party_lawyer.address.on_one_line() }
+      ${ other_party_lawyer.phone_number }
+
+      ${ other_party_lawyer.bar_number }
+    show if: len(other_parties) > 0 and other_side_has_lawyer
   - Edit: 
       - docket_number
       - county_choice
@@ -1059,63 +1159,6 @@ subquestion: |
   % if len(users.complete_elements()) >= 1:
   ${ users.table }
   % endif
-review:
-  - Edit:
-    - multiple_users
-    - recompute:
-      - add_or_remove_users
-    button: |
-      Are there multiple users? ${ word(yesno(multiple_users)) }
-  - Edit:
-    - user_first_party
-    - recompute:
-      - add_or_remove_users
-    button: |
-      Are you the first party listed in the case?: ${ word(yesno(user_first_party)) }
-  - Edit:
-    - users[0].address.address
-    - users[0].phone_number
-    button: |
-      **Your contact information:**
-
-      ${ users[0].address.on_one_line() }  
-      ${ users[0].phone_number }
-    show if: not multiple_users or user_first_party
-  - Edit:
-    - users[1].address.address
-    - users[1].no_phone_number
-    button: |
-      **${ users[1] } contact information:**
-
-      ${ users[1].address.on_one_line() }  
-      ${ users[1].phone_number if not users[1].no_phone_number else word("No phone number") }
-    show if: multiple_users and not user_first_party and not first_party_user_side_has_lawyer
-  - Edit:
-    - first_party_user_side_has_lawyer
-    - recompute:
-      - add_or_remove_users
-    button: |
-      <strong>
-      % if first_party_user_side_has_lawyer:
-      ${ user_side_lawyer } is ${ users[1] }'s lawyer.
-      % else:
-      ${ users[1] } does not have a lawyer.
-      % endif
-      </strong>
-    show if: multiple_users and not user_first_party
-  - Edit:
-    - user_side_lawyer.address.address
-    - user_side_lawyer.phone_number
-    - user_side_lawyer.bar_number
-    button: |
-      **${ user_side_lawyer } contact information:**
-
-      ${ user_side_lawyer.address.on_one_line() }
-
-      ${ user_side_lawyer.phone_number }
-
-      ${ user_side_lawyer.bar_number }
-    show if: multiple_users and not user_first_party and first_party_user_side_has_lawyer
 continue button field: users.revisit
 ---
 id: revisit other_parties
@@ -1129,41 +1172,6 @@ subquestion: |
 
   ${ other_parties.add_action(label="There is a person on the other side of my case") }
   % endif
-review:
-  - Edit:
-    - other_side_has_lawyer
-    - recompute:
-      - force_regather_others
-    button: |
-      <strong>
-      % if other_side_has_lawyer:
-      ${ other_parties } has a lawyer, ${ other_party_lawyer }.
-      % else:
-      ${ other_parties } doesn't have a lawyer.
-      % endif
-      </strong>
-    show if: len(other_parties) > 0
-  - Edit:
-    - other_parties[0].address.address
-    - other_parties[0].no_phone_number
-    button: |
-      **${ other_parties } contact information:**
-
-      ${ other_parties[0].address.on_one_line() }
-      ${ other_parties[0].phone_number if not other_parties[0].no_phone_number else word("No phone number") }
-    show if: len(other_parties) > 0 and not other_side_has_lawyer
-  - Edit:
-    - other_party_lawyer.address.address
-    - other_party_lawyer.phone_number
-    - other_party_lawyer.bar_number
-    button: |
-      **${ other_party_lawyer } contact information:**
-
-      ${ other_party_lawyer.address.on_one_line() }
-      ${ other_party_lawyer.phone_number }
-
-      ${ other_party_lawyer.bar_number }
-    show if: len(other_parties) > 0 and other_side_has_lawyer
 continue button field: other_parties.revisit
 ---
 generic object: ALPeopleList
