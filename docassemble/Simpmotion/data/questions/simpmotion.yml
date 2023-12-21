@@ -232,9 +232,9 @@ id: Navigation and Saving Your Form
 question: |
   Navigation and Saving Your Form
 subquestion: |
-  If you make a mistake at any time, you can use the **< ${ MLH_back_button_label } >** button below to go back. You can also see and edit some of your earlier answers by clicking on the "Review your answers" button.
+  If you make a mistake at any time, you can use the **< ${ MLH_back_button_label }** button below to go back. You can also see and edit some of your earlier answers by clicking on the "Review your answers" button.
   
-  <h2 class="h3">Saving Your Answers</h2>
+  <h2 class="h4">Saving Your Answers</h2>
 
   % if user_logged_in():
   Since you **are signed in** to your account, just click the **${ MLH_continue_button_label}** button to save your progress.
@@ -261,7 +261,7 @@ question: |
 subquestion: |
   Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. You must already have a case in court to file a motion. Michigan Legal Help may have information about starting the kind of case you need. Use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to search for information or to find a lawyer or legal services in your area. 
   
-  If you made a mistake, click the **${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+  If you made a mistake, click the **< ${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
 buttons:
   - Exit: exit
     url: https://michiganlegalhelp.org
@@ -311,7 +311,7 @@ question: |
 subquestion: |
   Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. Probate cases have different procedural rules than other cases. You may want to speak to a lawyer. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to find a lawyer or legal services office in your area.
   
-  If you made a mistake, click the **${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+  If you made a mistake, click the **< ${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
 buttons:
   - Exit: exit
     url: https://michiganlegalhelp.org
@@ -325,8 +325,6 @@ subquestion: |
   Michigan Legal Help has some tools to help you draft more specific motions. **The more specific tools will help you make sure that you do the best job you can of meeting the requirements of that kind of motion. If there is a specific tool, you should use that tool instead of this one.** Check the tools at the link below carefully to find out if there is a specific motion tool you should use:
   
   **Follow this [link to a list of all the tools on Michigan Legal Help](https://michiganlegalhelp.org/all-forms).**
-  
-  Do any of the tools on that page fit what you are trying to do?
 fields:
   - Do any of the tools on that page fit what you are trying to do?: right_tool
     datatype: yesnoradio
@@ -338,7 +336,7 @@ question: |
 subquestion: |
   This tool is not right for you. Please use the tool from [this page](https://michiganlegalhelp.org/all-forms) that applies to you instead. 
   
-  If you made a mistake, click the **${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+  If you made a mistake, click the **< ${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
 buttons:
   - Exit: exit
     url: https://michiganlegalhelp.org
@@ -348,8 +346,6 @@ question: |
   Check for SCAO-Approved Forms
 subquestion: |
   The State Court Administrative Office (SCAO) has court forms for some kinds of motions. Follow this [link to the list of SCAO-approved forms](https://www.courts.michigan.gov/SCAO-forms/#Index) to find out if they have a form for the kind of request you need in your case. 
-  
-  Did you find a form that applies to your case?
 fields:
   - Did you find a form that applies to your case?: approved_form
     datatype: yesnoradio
@@ -361,7 +357,7 @@ question: |
 subquestion: |
   This tool is not right for you. Instead of using this tool to prepare a motion, please use the SCAO-approved form that applies to your case. 
   
-  If you made a mistake, click the **${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
+  If you made a mistake, click the **< ${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
 buttons:
   - Exit: exit
     url: https://michiganlegalhelp.org
@@ -388,7 +384,7 @@ subquestion: |
   For your whole case, you are either the Plaintiff, the Defendant, the Petitioner, or the Respondent. 
 fields: 
   - What party are you in your case?: user_ask_role
-    label above field:
+    label above field: True
     datatype: radio
     choices:
       - I am the Plaintiff or Petitioner: plaintiff
