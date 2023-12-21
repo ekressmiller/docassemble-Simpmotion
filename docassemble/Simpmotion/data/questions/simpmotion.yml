@@ -30,6 +30,8 @@ code: |
 ---
 code: |
   github_repo_name = 'docassemble-Simpmotion'
+---
+code: |
   interview_short_title = "File a Notice of Hearing and Motion in your case"
 ---
 code: |
@@ -108,7 +110,6 @@ code: |
   welcome
   MLH_intro_time
   navigation_and_saving
-  MLH_intro_agree_no_pii
   if MLH_intro_agree_no_pii == False:
     MLH_intro_agree_no_pii_exit
   existing_case
@@ -280,7 +281,7 @@ fields:
 ---
 event: existing_case_exit
 question: |
-  You cannot continue to use the tool.
+  You cannot continue to use the tool
 subquestion: |
   Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. You must already have a case in court to file a motion. 
   
@@ -311,7 +312,7 @@ subquestion: |
 buttons:
   - Exit: exit
     url: https://michiganlegalhelp.org
---- 
+---
 id: Is this a probate case
 question: |
   Are you Filing in a Probate Case?
