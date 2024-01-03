@@ -241,7 +241,7 @@ subquestion: |
   % else:
   You are **not signed in** or have **not created** an account yet.
   
-  * Go to the menu at the top of the screen and click "Sign up or sign in to save answers". Make note of your username and password.
+  * Go to the menu at the top of the screen and click "Sign in or sign up to save answers". Make note of your username and password.
   % endif
 continue button field: navigation_and_saving
 ---
@@ -756,7 +756,7 @@ subquestion: |
   * **Do your best to understand what rules the judge will follow when deciding your motion**. For example, if the law says that the judge can grant a motion in your case if you show a change in circumstances, be sure to explain the change in circumstances. If the court rules say you must show good cause, explain the good cause. It is a good idea to use those specific words. For example, if you need to show good cause, say “There is good cause because…”
   * **Do not include any {personal identifying information}**. If you need to include this type of information, you must fill out form [MC 97](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97.pdf) (if the information is related to a defendant, respondent, or decedent) or form [MC 97a](https://www.courts.michigan.gov/siteassets/forms/scao-approved/mc97a.pdf) (if the information is about a plaintiff, petitioner, or anyone else not included in MC 97). Include the information on MC 97 and do not include it in the Motion. Instead, include a reference in the Motion to ask the judge to see MC 97 for the information.
   
-  Use the space below to tell the judge what you want and to give reasons for it. If you can't finish writing what you want to say right now, go to the menu at the top of the screen and click "Sign up or sign in to save answers".  If you are already signed in, click **Continue** to save your work. 
+  Use the space below to tell the judge what you want and to give reasons for it. If you can't finish writing what you want to say right now, go to the menu at the top of the screen and click "Sign in or sign up to save answers".  If you are already signed in, click **Continue** to save your work. 
 terms:
   personal identifying information: |
     Personal identifying information includes: date of birth, social security or national identification number, driver’s license or state identification number, passport number, and financial account numbers.
@@ -1088,9 +1088,9 @@ subquestion: |
 
   ${ action_button_html(url_action('review_simpmotion'), label='Edit answers', color='info') }
   
-  
+  <p>
   ${ al_user_bundle.download_list_html() }
-  
+  </p>
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
 
