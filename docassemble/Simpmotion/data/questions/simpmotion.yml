@@ -302,7 +302,7 @@ fields:
 ---
 event: criminal_case_exit
 question: |
-  You cannot continue to use the tool.
+  You cannot continue to use the tool
 subquestion: |
   Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. This tool was not designed for criminal cases. 
   
