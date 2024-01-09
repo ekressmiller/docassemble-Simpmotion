@@ -767,16 +767,6 @@ question: |
 subquestion: |
   You don't need the hearing information yet.  You can fill out the hearing information after you file your motion with the court.  We will give you instructions.
 ---
-id: When will you serve the other party or parties
-question: |
-  When will you serve the other party or parties?
-subquestion: |
-  If you are not sure, you can leave this blank and neatly write it by hand before you file it in court.
-fields:
-  - "Date of Service": service_date
-    required: false
-    datatype: date
----
 id: download simpmotion
 event: simpmotion_download
 question: |
@@ -965,7 +955,7 @@ review:
     button: |
       **You are a**: ${ user_label }
   - note: |
-      <h2 class="h3">${ user_label_plural }</h2>
+      <h2 class="h3">${ capitalize(user_label_plural) }</h2>
   - Edit: users.revisit
     button: |
       ${ user_label_plural } names: ${ users }
@@ -1026,7 +1016,7 @@ review:
       ${ user_side_lawyer.bar_number }
     show if: multiple_users and not user_first_party and first_party_user_side_has_lawyer
   - note: |
-      <h2 class="h3">${ other_side_label_plural }</h2>
+      <h2 class="h3">${ capitalize(other_side_label_plural) }</h2>
   - Edit:
     - other_parties.revisit
     - recompute:
@@ -1385,4 +1375,3 @@ attachments:
             % else:
             ${ '' }
             % endif
-      - "service_date": ${ service_date }
