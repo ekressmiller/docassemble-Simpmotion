@@ -24,6 +24,10 @@ metadata:
   al_weaver_version: "1.7.0"
   generated on: "2022-08-19"
 ---
+# should move this to framework
+features:
+  progress bar: False
+---
 # overflow--sets default message
 code: |
   AL_DEFAULT_OVERFLOW_MESSAGE = " [PLEASE SEE ATTACHMENT.]"
@@ -97,16 +101,23 @@ code: |
     plaintiffs_attorney = other_party_lawyer
 ---
 sections:
-  - review_simpmotion: Review your answers
+  - review_intro: "Introduction"
+  - review_your_info: "Your Information"
+  - review_other_info: "Other Party's Information"
+  - review_case_info: "Case Information"
+  - review_motion: "Your Motion"
+  - review_hearing_info: "Hearing Information"
+  - review_esign: "Electronic Signature"
+  - review_download: "Get Your Forms"
 ---
 #################### Interview order #####################
 comment: |
   Controls order and branching logic for questions specific to this form
 id: interview_order_simpmotion
 code: |
+  nav.set_section('review_intro')
   # Set the allowed courts for this interview
   allowed_courts = all_variables(special="metadata")["allowed courts"]
-  nav.set_section('review_simpmotion')
   welcome
   MLH_intro_time
   navigation_and_saving
@@ -115,7 +126,6 @@ code: |
   existing_case
   if existing_case == False:
     existing_case_exit
-  set_progress(11)
   criminal_case
   if criminal_case == True:
     criminal_case_exit
@@ -129,19 +139,19 @@ code: |
   if approved_form == True:
     approved_form_exit
   speak_to_lawyer
+  
+  nav.set_section('review_your_info')
   user_ask_role
   user_label
-  set_progress(22)
   users[0].name.first
   multiple_users
-  set_progress(33)
   # we assume user has no attorney
   users.gather() # number = 2 if multiple_users and not user_first_party else 1)
   add_or_remove_users
-  set_progress(44)
   review_screen_user_side
+  
+  nav.set_section('review_other_info')
   other_parties.gather()
-  set_progress(55)
   if len(other_parties) == 1:
     if other_side_has_lawyer == True:
       other_party_lawyer.name.first
@@ -152,7 +162,8 @@ code: |
       other_parties[0].address.address
       other_parties[0].phone_number
   review_screen_other_side
-  set_progress(66)
+  
+  nav.set_section('review_case_info')
   docket_number
   # trial_court
   # Bryce added below as placeholder to be replaced by something for Michigan courts later?
@@ -161,9 +172,12 @@ code: |
   court_index
   # calling value of the_court to load AL_court_loader object
   the_court
-  set_progress(77)
+  
+  nav.set_section('review_motion')
   motion_title
   motion_body
+
+  nav.set_section('review_hearing_info')
   has_hearing_info
   if has_hearing_info == True:
     hearing_at_court
@@ -172,11 +186,14 @@ code: |
     trial_court_bar_number
   if has_hearing_info == False:
     no_hearing_info_ok
-  set_progress(88)
   set_parts(subtitle=str(users[0]))
+  
+  nav.set_section('review_esign')
   MLH_esign
   if MLH_esign == True:
     signature_date
+    
+  nav.set_section('review_download')
   # is it necessary to call these so that their value can be accessed when filling form?
   plaintiffs
   defendants
@@ -279,6 +296,7 @@ fields:
     datatype: yesnoradio
     label above field: True
 ---
+id: Existing Case Exit
 event: existing_case_exit
 question: |
   You cannot continue to use the tool
@@ -287,10 +305,7 @@ subquestion: |
   
   Michigan Legal Help may have information about starting the kind of case you need. Use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to search for information or to find a lawyer or legal services in your area. 
   
-  If you made a mistake, click the **< ${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
-buttons:
-  - Exit: exit
-    url: https://michiganlegalhelp.org
+  If you made a mistake, click the **< ${ MLH_back_button_label }** button to change your answer.
 ---
 id: Is this a criminal case
 question: |
@@ -300,18 +315,16 @@ fields:
     datatype: yesnoradio
     label above field: True
 ---
+id: Criminal Case Exit
 event: criminal_case_exit
 question: |
   You cannot continue to use the tool
 subquestion: |
   Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. This tool was not designed for criminal cases. 
   
-  You may want to speak to a lawyer. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to find a lawyer or legal services office in your area.
+  You may want to speak to a lawyer. You can contact pretrial services of the court your case is in and ask how to request a public defender.  You can also use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to get contact information for a lawyer referral service.
   
-  If you made a mistake, click the **< ${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
-buttons:
-  - Exit: exit
-    url: https://michiganlegalhelp.org
+   If you made a mistake, click the **< ${ MLH_back_button_label }** button to change your answer.
 ---
 id: Is this a probate case
 question: |
@@ -331,16 +344,16 @@ fields:
     datatype: yesnoradio
     label above field: True
 ---
+id: Probate Case Exit
 event: probate_case_exit
 question: |
   You cannot continue to use the tool.
 subquestion: |
-  Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. Probate cases have different procedural rules than other cases. You may want to speak to a lawyer. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to find a lawyer or legal services office in your area.
+  Based on your answer, you can't use this tool to make a Notice of Hearing and Motion. Probate cases have different rules than other cases. 
   
-  If you made a mistake, click the **< ${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
-buttons:
-  - Exit: exit
-    url: https://michiganlegalhelp.org
+  You may want to speak to a lawyer. You can use the [Guide to Legal Help](https://michiganlegalhelp.org/guide-to-legal-help) to find a lawyer or legal services office in your area.
+  
+  If you made a mistake, click the **< ${ MLH_back_button_label }** button to change your answer.
 --- 
 id: Make Sure this Tool is Right for Your Situation
 question: |
@@ -356,16 +369,14 @@ fields:
     datatype: yesnoradio
     label above field: True
 ---
+id: Right Tool Exit
 event: right_tool_exit
 question: |
   You cannot continue to use the tool.
 subquestion: |
   This tool is not right for you. Please use the tool from [this page](https://michiganlegalhelp.org/all-forms) that applies to you instead. 
   
-  If you made a mistake, click the **< ${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
-buttons:
-  - Exit: exit
-    url: https://michiganlegalhelp.org
+  If you made a mistake, click the **< ${ MLH_back_button_label }** button to change your answer.
 ---
 id: Check for SCAO Approved Forms
 question: |
@@ -377,16 +388,14 @@ fields:
     datatype: yesnoradio
     label above field: True
 ---
+id: Approved Form Exit
 event: approved_form_exit
 question: |
   You cannot continue to use the tool.
 subquestion: |
-  This tool is not right for you. Instead of using this tool to prepare a motion, please use the SCAO-approved form that applies to your case. 
+  This tool is not right for you. Instead of using this tool, please use the [SCAO-approved form](https://www.courts.michigan.gov/SCAO-forms/#Index) that applies to your case. 
   
-  If you made a mistake, click the **< ${ MLH_back_button_label }** button. Otherwise, click the **Exit** button to return to Michigan Legal Help.
-buttons:
-  - Exit: exit
-    url: https://michiganlegalhelp.org
+  If you made a mistake, click the **< ${ MLH_back_button_label }** button to change your answer. Otherwise, you can return to [Michigan Legal Help](https://michiganlegalhelp.org) for other legal information or resources.
 ---
 id: You May Want to Speak with a Lawyer
 question: |
@@ -785,7 +794,6 @@ subquestion: |
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
 
-progress: 100
 ---
 code: |
   users.there_are_any = True
@@ -1215,6 +1223,25 @@ code: |
       other_parties[0].address.address
       other_parties[0].phone_number
   force_regather_others = True
+---
+# below blocks link review screen to nav bar
+event: review_your_info
+code: review_simpmotion
+---
+event: review_other_info
+code: review_simpmotion
+---
+event: review_case_info
+code: review_simpmotion
+---
+event: review_motion
+code: review_simpmotion
+---
+event: review_hearing_info
+code: review_simpmotion
+---
+event: review_esign
+code: review_simpmotion
 ---
 objects:
   - simpmotion_post_interview_instructions: ALDocument.using(title="Instructions", filename="simpmotion_next_steps.docx", enabled=True, has_addendum=False, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
