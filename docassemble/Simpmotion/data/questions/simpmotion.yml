@@ -1025,7 +1025,7 @@ review:
       <strong>
       % if len(other_parties.complete_elements()) > 0:
       The ${ other_side_label }: ${ other_parties }
-      % else:
+      % elif user_started_case:
       There is not a defendant or respondent in your case.
       % endif
       </strong>
@@ -1172,6 +1172,7 @@ subquestion: |
   % endif
 continue button field: other_parties.revisit
 ---
+if: user_started_case
 generic object: ALPeopleList
 table: x.table
 rows: x
@@ -1180,6 +1181,17 @@ columns:
       row_item.name if defined('row_item.name.first') else ''
 edit:
   - name.first
+---
+if: not user_started_case
+generic object: ALPeopleList
+table: x.table
+rows: x
+columns:
+  - Name: |
+      row_item.name if defined('row_item.name.first') else ''
+edit:
+  - name.first
+delete buttons: False
 ---
 table: users.table
 rows: users
@@ -1196,7 +1208,9 @@ code: |
     other_parties.target_number = 1
     if showifdef('other_parties.gathered') and len(other_parties) == 0:
       del other_parties.gathered
-      del other_party_lawyer
+      del other_parties.there_are_any
+      if defined('other_party_lawyer'):
+        del other_party_lawyer
   if len(other_parties.complete_elements()) > 0:
     if other_side_has_lawyer and not other_party_lawyer:
       del other_party_lawyer
