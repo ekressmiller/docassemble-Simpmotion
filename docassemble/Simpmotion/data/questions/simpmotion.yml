@@ -103,18 +103,20 @@ code: |
 sections:
   - review_intro: "Introduction"
   - review_your_info: "Your Information"
-  - review_other_info: "Other Party's Information"
+  - review_other_info: "Other Side Information"
   - review_case_info: "Case Information"
   - review_motion: "Your Motion"
-  - review_hearing_info: "Hearing Information"
+  - review_hearing_info: "Hearing"
   - review_esign: "Electronic Signature"
   - review_download: "Get Your Forms"
+  - review_edit: "✎ Edit Answers"
 ---
 #################### Interview order #####################
 comment: |
   Controls order and branching logic for questions specific to this form
 id: interview_order_simpmotion
 code: |
+  nav.set_section('review_edit')
   nav.set_section('review_intro')
   # Set the allowed courts for this interview
   allowed_courts = all_variables(special="metadata")["allowed courts"]
@@ -1215,22 +1217,7 @@ code: |
   force_regather_others = True
 ---
 # below blocks link review screen to nav bar
-event: review_your_info
-code: review_simpmotion
----
-event: review_other_info
-code: review_simpmotion
----
-event: review_case_info
-code: review_simpmotion
----
-event: review_motion
-code: review_simpmotion
----
-event: review_hearing_info
-code: review_simpmotion
----
-event: review_esign
+event: review_edit
 code: review_simpmotion
 ---
 objects:
