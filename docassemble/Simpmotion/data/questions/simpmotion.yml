@@ -1208,7 +1208,8 @@ code: |
     other_parties.target_number = 1
     if showifdef('other_parties.gathered') and len(other_parties) == 0:
       del other_parties.gathered
-      del other_parties.there_are_any
+      if defined('other_parties.there_are_any'):
+        del other_parties.there_are_any
       if defined('other_party_lawyer'):
         del other_party_lawyer
   if len(other_parties.complete_elements()) > 0:
