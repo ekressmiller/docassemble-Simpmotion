@@ -195,18 +195,31 @@ code: |
     
   nav.set_section('review_download')
   # is it necessary to call these so that their value can be accessed when filling form?
-  plaintiffs
-  defendants
-  plaintiffs_attorney
-  defendants_attorney
+  #  plaintiffs
+  #  defendants
+  #  plaintiffs_attorney
+  #  defendants_attorney
   interview_order_simpmotion = True
 ---
 only sets: add_or_remove_users
 code: |
   if len(users.complete_elements()) > 1 and not multiple_users:
     users.remove(users[1])
+    if defined('user_side_lawyer'):
+      del user_side_lawyer
+    if defined('defendants_attorney'):
+      del defendants_attorney
+    if defined('plaintiffs_attorney'):
+      del plaintiffs_attorney
   elif len(users.elements) == 1 and multiple_users and not user_first_party:
     users.appendObject()
+  if user_first_party:
+    if defined('user_side_lawyer'):
+      del user_side_lawyer
+    if defined('defendants_attorney'):
+      del defendants_attorney
+    if defined('plaintiffs_attorney'):
+      del plaintiffs_attorney
   if not multiple_users or user_first_party:
     users[0].address.address
     users[0].phone_number
