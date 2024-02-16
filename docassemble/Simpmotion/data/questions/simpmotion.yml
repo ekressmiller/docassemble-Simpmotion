@@ -24,9 +24,14 @@ metadata:
   al_weaver_version: "1.7.0"
   generated on: "2022-08-19"
 ---
+default screen parts:
+  right: |
+    [✎ Edit Answers](${ url_action('review_simpmotion') })
+---
 # should move this to framework
 features:
-  progress bar: False
+  progress bar: True
+  small screen navigation: False
 ---
 # overflow--sets default message
 code: |
@@ -101,14 +106,6 @@ code: |
     plaintiffs_attorney = other_party_lawyer
 ---
 sections:
-  - review_intro: "Introduction"
-  - review_your_info: "Your Information"
-  - review_other_info: "Other Side Information"
-  - review_case_info: "Case Information"
-  - review_motion: "Your Motion"
-  - review_hearing_info: "Hearing"
-  - review_esign: "Electronic Signature"
-  - review_download: "Get Your Forms"
   - review_edit: "✎ Edit Answers"
 ---
 #################### Interview order #####################
@@ -117,7 +114,6 @@ comment: |
 id: interview_order_simpmotion
 code: |
   nav.set_section('review_edit')
-  nav.set_section('review_intro')
   # Set the allowed courts for this interview
   allowed_courts = all_variables(special="metadata")["allowed courts"]
   welcome
@@ -142,7 +138,6 @@ code: |
     approved_form_exit
   speak_to_lawyer
   
-  nav.set_section('review_your_info')
   user_ask_role
   user_label
   users[0].name.first
@@ -152,7 +147,6 @@ code: |
   add_or_remove_users
   review_screen_user_side
   
-  nav.set_section('review_other_info')
   other_parties.gather()
   if len(other_parties) == 1:
     if other_side_has_lawyer == True:
@@ -165,7 +159,6 @@ code: |
       other_parties[0].phone_number
   review_screen_other_side
   
-  nav.set_section('review_case_info')
   docket_number
   # trial_court
   # Bryce added below as placeholder to be replaced by something for Michigan courts later?
@@ -175,11 +168,9 @@ code: |
   # calling value of the_court to load AL_court_loader object
   the_court
   
-  nav.set_section('review_motion')
   motion_title
   motion_body
 
-  nav.set_section('review_hearing_info')
   has_hearing_info
   if has_hearing_info == True:
     hearing_at_court
@@ -190,13 +181,11 @@ code: |
     no_hearing_info_ok
   set_parts(subtitle=str(users[0]))
   
-  nav.set_section('review_esign')
   MLH_esign
   if MLH_esign == True:
     signature_date
     
-  nav.set_section('review_download')
-  # is it necessary to call these so that their value can be accessed when filling form?
+   # is it necessary to call these so that their value can be accessed when filling form?
   plaintiffs
   defendants
   plaintiffs_attorney
