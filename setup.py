@@ -44,7 +44,7 @@ def find_package_data(where='.', package='', exclude=standard_exclude, exclude_d
     return out
 
 setup(name='docassemble.Simpmotion',
-      version='1.5.2',
+      version='1.5.3',
       description=('Motion and Notice of Hearing'),
       long_description='# docassemble.Simpmotion\r\n\r\nMotion and Notice of Hearing\r\n\r\n## Author\r\n\r\nMichigan Legal Help\r\n\r\n',
       long_description_content_type='text/markdown',
