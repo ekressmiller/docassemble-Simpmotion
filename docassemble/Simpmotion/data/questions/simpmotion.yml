@@ -24,15 +24,9 @@ metadata:
   al_weaver_version: "1.7.0"
   generated on: "2022-08-19"
 ---
-# this would also go to framework if we want to standardize this
-default screen parts:
-  right: |
-    ✎ [Edit Answers](${ url_action('review_simpmotion') })
----
-# should move this to framework
+# should move this to framework once decision made
 features:
   progress bar: True
-  small screen navigation: False
 ---
 # overflow--sets default message
 code: |
@@ -107,23 +101,23 @@ code: |
     plaintiffs_attorney = other_party_lawyer
 ---
 sections:
-  - review_intro: "Introduction"
-  - review_your_info: "Your Information"
-  - review_other_info: "Other Side Information"
-  - review_case_info: "Case Information"
-  - review_motion: "Your Motion"
-  - review_hearing_info: "Hearing"
-  - review_esign: "Electronic Signature"
-  - review_download: "Get Your Forms"
-  - review_edit: "✎ <u>Edit Answers</u>"
+  - signpost_intro: "Introduction"
+  - signpost_your_info: "Your Information"
+  - signpost_other_info: "Other Side Information"
+  - signpost_case_info: "Case Information"
+  - signpost_motion: "Your Motion"
+  - signpost_hearing_info: "Hearing"
+  - signpost_esign: "Electronic Signature"
+  - signpost_download: "Get Your Forms"
+  - review_full: "✎ <u>Review / Edit</u>"
 ---
 #################### Interview order #####################
 comment: |
   Controls order and branching logic for questions specific to this form
 id: interview_order_simpmotion
 code: |
-  nav.set_section('review_edit')
-  nav.set_section('review_intro')
+  nav.set_section('review_full')
+  nav.set_section('signpost_intro')
   # Set the allowed courts for this interview
   allowed_courts = all_variables(special="metadata")["allowed courts"]
   welcome
@@ -148,7 +142,7 @@ code: |
     approved_form_exit
   speak_to_lawyer
   
-  nav.set_section('review_your_info')
+  nav.set_section('signpost_your_info')
   user_ask_role
   user_label
   users[0].name.first
@@ -158,7 +152,7 @@ code: |
   add_or_remove_users
   review_screen_user_side
   
-  nav.set_section('review_other_info')
+  nav.set_section('signpost_other_info')
   other_parties.gather()
   if len(other_parties) == 1:
     if other_side_has_lawyer == True:
@@ -171,7 +165,7 @@ code: |
       other_parties[0].phone_number
   review_screen_other_side
   
-  nav.set_section('review_case_info')
+  nav.set_section('signpost_case_info')
   docket_number
   # trial_court
   # Bryce added below as placeholder to be replaced by something for Michigan courts later?
@@ -181,11 +175,11 @@ code: |
   # calling value of the_court to load AL_court_loader object
   the_court
   
-  nav.set_section('review_motion')
+  nav.set_section('signpost_motion')
   motion_title
   motion_body
 
-  nav.set_section('review_hearing_info')
+  nav.set_section('signpost_hearing_info')
   has_hearing_info
   if has_hearing_info == True:
     hearing_at_court
@@ -196,12 +190,12 @@ code: |
     no_hearing_info_ok
   set_parts(subtitle=str(users[0]))
   
-  nav.set_section('review_esign')
+  nav.set_section('signpost_esign')
   MLH_esign
   if MLH_esign == True:
     signature_date
     
-  nav.set_section('review_download')
+  nav.set_section('signpost_download')
   # is it necessary to call these so that their value can be accessed when filling form?
   #  plaintiffs
   #  defendants
@@ -1251,7 +1245,7 @@ code: |
   force_regather_others = True
 ---
 # below blocks link review screen to nav bar
-event: review_edit
+event: review_full
 code: review_simpmotion
 ---
 objects:

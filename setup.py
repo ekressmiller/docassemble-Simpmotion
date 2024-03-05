@@ -54,7 +54,7 @@ setup(name='docassemble.Simpmotion',
       url='https://michiganlegalhelp.org',
       packages=find_packages(),
       namespace_packages=['docassemble'],
-      install_requires=['docassemble.AssemblyLine>=2.27.0', 'docassemble.mlhframework'],
+      install_requires=['docassemble.AssemblyLine>=2.27.1', 'docassemble.mlhframework'],
       zip_safe=False,
       package_data=find_package_data(where='docassemble/Simpmotion/', package='docassemble.Simpmotion'),
      )
