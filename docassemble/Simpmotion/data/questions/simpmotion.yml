@@ -33,7 +33,8 @@ code: |
   AL_DEFAULT_OVERFLOW_MESSAGE = " [PLEASE SEE ATTACHMENT.]"
 ---
 code: |
-  github_repo_name = 'docassemble-Simpmotion'
+  # github_repo_name = 'docassemble-Simpmotion'
+  github_repo_name = 'docassemble-UserFeedback'
 ---
 code: |
   interview_short_title = "File a Notice of Hearing and Motion in your case"
@@ -950,7 +951,7 @@ review:
       If any of this information is wrong, click on **Review your answers** to fix it now. Make sure these answers are correct before you continue.
 ---
 id: simpmotion overall review screen
-event: review_simpmotion
+event: review_full
 question: |
   Review your answers
 review:
@@ -1243,10 +1244,6 @@ code: |
       other_parties[0].address.address
       other_parties[0].phone_number
   force_regather_others = True
----
-# below blocks link review screen to nav bar
-event: review_full
-code: review_simpmotion
 ---
 objects:
   - simpmotion_post_interview_instructions: ALDocument.using(title="Instructions", filename="simpmotion_next_steps.docx", enabled=True, has_addendum=False, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
