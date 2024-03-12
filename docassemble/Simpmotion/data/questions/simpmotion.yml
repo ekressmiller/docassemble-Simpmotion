@@ -24,17 +24,12 @@ metadata:
   al_weaver_version: "1.7.0"
   generated on: "2022-08-19"
 ---
-# should move this to framework once decision made
-features:
-  progress bar: True
----
 # overflow--sets default message
 code: |
   AL_DEFAULT_OVERFLOW_MESSAGE = " [PLEASE SEE ATTACHMENT.]"
 ---
 code: |
-  # github_repo_name = 'docassemble-Simpmotion'
-  github_repo_name = 'docassemble-UserFeedback'
+  github_repo_name = 'docassemble-Simpmotion'
 ---
 code: |
   interview_short_title = "File a Notice of Hearing and Motion in your case"
