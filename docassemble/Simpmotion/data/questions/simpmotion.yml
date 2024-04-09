@@ -1240,9 +1240,6 @@ code: |
       other_parties[0].phone_number
   force_regather_others = True
 ---
-code: |
-  accessible_instructions_link = "[https://michiganlegalhelp.org/step/565](https://michiganlegalhelp.org/step/565)"
----
 objects:
   - instructions: ALDocument.using(title="Instructions", filename="simpmotion_next_steps.docx", enabled=True, has_addendum=False, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
   #for overflow, set has_addendum = True
