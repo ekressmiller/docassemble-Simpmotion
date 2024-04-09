@@ -262,7 +262,7 @@ question: |
 subquestion: |
   You will need information about you case, the parties, and what you want the court to do.
 ---
-id: Welcome FirstScreen
+id: Welcome
 question: |
   Welcome
 subquestion: |
@@ -778,7 +778,7 @@ question: |
 subquestion: |
   You don't need the hearing information yet.  You can fill out the hearing information after you file your motion with the court.  We will give you instructions.
 ---
-id: simpmotion DownloadScreen
+id: download simpmotion
 event: simpmotion_download
 question: |
   All done
@@ -1239,6 +1239,12 @@ code: |
       other_parties[0].address.address
       other_parties[0].phone_number
   force_regather_others = True
+---
+code: |
+  accessible_instructions_link = "[https://michiganlegalhelp.org/step/565](https://michiganlegalhelp.org/step/565)"
+---
+code: |
+  resource_page_link = "[https://michiganlegalhelp.org/node/528](https://michiganlegalhelp.org/node/528)"
 ---
 objects:
   - instructions: ALDocument.using(title="Instructions", filename="simpmotion_next_steps.docx", enabled=True, has_addendum=False, default_overflow_message=AL_DEFAULT_OVERFLOW_MESSAGE)
