@@ -740,6 +740,7 @@ buttons:
       code: |
         has_hearing_info = False
         undefine('judge.name', 'trial_court_bar_number', 'hearing_time', 'hearing_date', 'hearing_at_court', 'hearing_address_on_one_line')
+progress: 90
 ---
 if: |
   has_hearing_info == True
@@ -794,7 +795,7 @@ subquestion: |
   
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
-
+progress: 100
 ---
 code: |
   users.there_are_any = True
@@ -909,6 +910,7 @@ review:
       **Check your answers before going on.**
       
       If any of this information is wrong, click **Review your answers** to fix it now. Make sure these answers are correct before you continue.  
+progress: 40
 ---
 continue button field: review_screen_other_side
 id: review screen--other side of case
@@ -944,6 +946,7 @@ review:
       **Check your answers before going on.**
       
       If any of this information is wrong, click on **Review your answers** to fix it now. Make sure these answers are correct before you continue.
+progress: 60
 ---
 id: simpmotion overall review screen
 event: review_full
