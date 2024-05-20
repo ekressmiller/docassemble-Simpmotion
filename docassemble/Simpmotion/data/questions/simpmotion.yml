@@ -744,7 +744,7 @@ buttons:
       code: |
         has_hearing_info = False
         undefine('judge.name', 'trial_court_bar_number', 'hearing_time', 'hearing_date', 'hearing_at_court', 'hearing_address_on_one_line')
-progress: 90
+progress: 95
 ---
 if: |
   has_hearing_info == True
