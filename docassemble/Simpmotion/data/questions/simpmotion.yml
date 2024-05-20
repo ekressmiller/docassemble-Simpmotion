@@ -24,6 +24,10 @@ metadata:
   al_weaver_version: "1.7.0"
   generated on: "2022-08-19"
 ---
+features:
+  progress bar method: stepped
+  progress bar multiplier: 0.1
+---
 # overflow--sets default message
 code: |
   AL_DEFAULT_OVERFLOW_MESSAGE = " [PLEASE SEE ATTACHMENT.]"
