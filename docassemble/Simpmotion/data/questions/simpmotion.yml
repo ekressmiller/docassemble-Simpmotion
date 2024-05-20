@@ -744,7 +744,7 @@ buttons:
       code: |
         has_hearing_info = False
         undefine('judge.name', 'trial_court_bar_number', 'hearing_time', 'hearing_date', 'hearing_at_court', 'hearing_address_on_one_line')
-progress: 95
+progress: 92
 ---
 if: |
   has_hearing_info == True
@@ -792,7 +792,7 @@ subquestion: |
   
   View, download and send your form below. Click the "Edit answers" button to fix any mistakes.
 
-  ${ action_button_html(url_action('review_simpmotion'), label='Edit answers', color='info') }
+  ${ action_button_html(url_action('review_full'), label='Edit answers', color='info') }
   
   
   ${ al_user_bundle.download_list_html() }
