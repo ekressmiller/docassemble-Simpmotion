@@ -244,6 +244,7 @@ code: |
       persistent=True,
       data={
           "reached_interview_end": False,
+          'snap_time': str(current_datetime().format_datetime()),
       },
   )  
   interview_order_simpmotion
@@ -255,6 +256,7 @@ code: |
           "zip": showifdef("users[0].address.zip"),
           "number_of_forms": len(al_court_bundle.enabled_documents()),
           "reached_interview_end": True,
+          'snap_time': str(current_datetime().format_datetime()),
       },
   )
   simpmotion_download
