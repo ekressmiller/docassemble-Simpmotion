@@ -114,13 +114,6 @@ id: interview_order_simpmotion
 code: |
   nav.set_section('review_full')
   nav.set_section('signpost_intro')
-  store_variables_snapshot(
-      key='intro',
-      persistent=True,
-      data={
-          "reached_interview_end": False,
-      },
-  )
   # Set the allowed courts for this interview
   allowed_courts = all_variables(special="metadata")["allowed courts"]
   welcome
@@ -246,9 +239,13 @@ comment: |
   Delete mandatory: True to include in another interview
 mandatory: True
 code: |
-  # the below has some good ideas in it, but taking out for now and just stealing the ideas
-  # al_intro_screen
-  # simpmotion_intro
+  store_variables_snapshot(
+      key='intro',
+      persistent=True,
+      data={
+          "reached_interview_end": False,
+      },
+  )  
   interview_order_simpmotion
   # Store anonymous data for analytics / statistics
   store_variables_snapshot(
