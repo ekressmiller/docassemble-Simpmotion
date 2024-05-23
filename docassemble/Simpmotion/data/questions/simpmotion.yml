@@ -112,6 +112,13 @@ comment: |
   Controls order and branching logic for questions specific to this form
 id: interview_order_simpmotion
 code: |
+  store_variables_snapshot(
+      key='intro',
+      persistent=True,
+      data={
+          'snap_time': str(current_datetime().format_datetime()),
+      },
+  )  
   nav.set_section('review_full')
   nav.set_section('signpost_intro')
   # Set the allowed courts for this interview
@@ -239,24 +246,15 @@ comment: |
   Delete mandatory: True to include in another interview
 mandatory: True
 code: |
-  store_variables_snapshot(
-      key='intro',
-      persistent=True,
-      data={
-          "reached_interview_end": False,
-          'start_time': str(current_datetime().format_datetime()),
-      },
-  )  
   interview_order_simpmotion
   # Store anonymous data for analytics / statistics
   store_variables_snapshot(
       key='final',
       persistent=True,
       data={
-          "zip": showifdef("users[0].address.zip"),
+          "zip": users[0].address.zip,
           "number_of_forms": len(al_court_bundle.enabled_documents()),
-          "reached_interview_end": True,
-          'start_time': str(current_datetime().format_datetime()),
+          'snap_time': str(current_datetime().format_datetime()),
       },
   )
   simpmotion_download
