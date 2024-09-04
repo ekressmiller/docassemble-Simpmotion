@@ -248,14 +248,15 @@ code: |
   # simpmotion_intro
   interview_order_simpmotion
   # Store anonymous data for analytics / statistics
+  simpmotion_download
   store_variables_snapshot(
       persistent=True,
       data={
-          "zip": showifdef("users[0].address.zip"),
-          "reached_interview_end": True,
+          "survey_useful": showifdef("useful_tool"),
+          "more_feedback": showifdef("more_feedback"),
       },
   )
-  simpmotion_download
+  end_survey
 ---
 comment: |
   This question is used to introduce your interview. Please customize
@@ -784,7 +785,8 @@ subquestion: |
   You don't need the hearing information yet.  You can fill out the hearing information after you file your motion with the court.  We will give you instructions.
 ---
 id: simpmotion DownloadScreen
-event: simpmotion_download
+continue button field: simpmotion_download
+continue button label: Submit Your Survey Answers!
 question: |
   All done
 subquestion: |
@@ -799,7 +801,35 @@ subquestion: |
   
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
+  
+  <h4 class="h4">Please take our quick survey!</h4>
+  
+fields:
+  - "Was this tool useful?": useful_tool
+    datatype: yesnoradio
+    required: False
+  - "Tell us more": more_feedback
+    required: False
+    show if: 
+      variable: useful_tool
+      is: False
+    maxlength: 300
+    input type: area
+  - "Tell us more": more_feedback
+    required: False
+    show if: 
+      variable: useful_tool
+      is: True
+    maxlength: 300 
+    input type: area
+
 progress: 100
+---
+id: end survey
+event: end_survey
+question: Survey!
+subquestion: Survey questions here
+
 ---
 code: |
   users.there_are_any = True
