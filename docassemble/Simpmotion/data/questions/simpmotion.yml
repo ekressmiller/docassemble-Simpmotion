@@ -119,88 +119,88 @@ code: |
   nav.set_section('review_full')
   nav.set_section('signpost_intro')
   # Set the allowed courts for this interview
-  allowed_courts = all_variables(special="metadata")["allowed courts"]
-  welcome
-  MLH_intro_time
-  navigation_and_saving
-  if MLH_intro_agree_no_pii == False:
-    MLH_intro_agree_no_pii_exit
-  existing_case
-  if existing_case == False:
-    existing_case_exit
-  criminal_case
-  if criminal_case == True:
-    criminal_case_exit
-  probate_case
-  if probate_case == True:
-    probate_case_exit
-  right_tool
-  if right_tool == True:
-    right_tool_exit
-  approved_form
-  if approved_form == True:
-    approved_form_exit
-  speak_to_lawyer
-  
-  nav.set_section('signpost_your_info')
-  user_ask_role
-  user_label
-  users[0].name.first
-  multiple_users
-  # we assume user has no attorney
-  users.gather() # number = 2 if multiple_users and not user_first_party else 1)
-  add_or_remove_users
-  review_screen_user_side
-  
-  nav.set_section('signpost_other_info')
-  other_parties.gather()
-  if len(other_parties) == 1:
-    if other_side_has_lawyer == True:
-      other_party_lawyer.name.first
-      other_party_lawyer.address.address
-      other_party_lawyer.phone_number
-      other_party_lawyer.bar_number
-    else:
-      other_parties[0].address.address
-      other_parties[0].phone_number
-  review_screen_other_side
-  
-  nav.set_section('signpost_case_info')
-  docket_number
-  # trial_court
-  # Bryce added below as placeholder to be replaced by something for Michigan courts later?
-  trial_court.name.text = "Trial Court"
-  county_choice
-  court_index
-  # calling value of the_court to load AL_court_loader object
-  the_court
-  
-  nav.set_section('signpost_motion')
-  motion_title
-  motion_body
-
-  nav.set_section('signpost_hearing_info')
-  has_hearing_info
-  if has_hearing_info == True:
-    hearing_at_court
-    hearing_time
-    judge.name
-    trial_court_bar_number
-  if has_hearing_info == False:
-    no_hearing_info_ok
-  set_parts(subtitle=str(users[0]))
-  
-  nav.set_section('signpost_esign')
-  MLH_esign
-  if MLH_esign == True:
-    signature_date
-    
-  nav.set_section('signpost_download')
-  # is it necessary to call these so that their value can be accessed when filling form?
-  #  plaintiffs
-  #  defendants
-  #  plaintiffs_attorney
-  #  defendants_attorney
+  #  allowed_courts = all_variables(special="metadata")["allowed courts"]
+  #  welcome
+  #  MLH_intro_time
+  #  navigation_and_saving
+  #  if MLH_intro_agree_no_pii == False:
+  #    MLH_intro_agree_no_pii_exit
+  #  existing_case
+  #  if existing_case == False:
+  #    existing_case_exit
+  #  criminal_case
+  #  if criminal_case == True:
+  #    criminal_case_exit
+  #  probate_case
+  #  if probate_case == True:
+  #    probate_case_exit
+  #  right_tool
+  #  if right_tool == True:
+  #    right_tool_exit
+  #  approved_form
+  #  if approved_form == True:
+  #    approved_form_exit
+  #  speak_to_lawyer
+  #  
+  #  nav.set_section('signpost_your_info')
+  #  user_ask_role
+  #  user_label
+  #  users[0].name.first
+  #  multiple_users
+  #  # we assume user has no attorney
+  #  users.gather() # number = 2 if multiple_users and not user_first_party else 1)
+  #  add_or_remove_users
+  #  review_screen_user_side
+  #  
+  #  nav.set_section('signpost_other_info')
+  #  other_parties.gather()
+  #  if len(other_parties) == 1:
+  #    if other_side_has_lawyer == True:
+  #      other_party_lawyer.name.first
+  #      other_party_lawyer.address.address
+  #      other_party_lawyer.phone_number
+  #      other_party_lawyer.bar_number
+  #    else:
+  #      other_parties[0].address.address
+  #      other_parties[0].phone_number
+  #  review_screen_other_side
+  #  
+  #  nav.set_section('signpost_case_info')
+  #  docket_number
+  #  # trial_court
+  #  # Bryce added below as placeholder to be replaced by something for Michigan courts later?
+  #  trial_court.name.text = "Trial Court"
+  #  county_choice
+  #  court_index
+  #  # calling value of the_court to load AL_court_loader object
+  #  the_court
+  #  
+  #  nav.set_section('signpost_motion')
+  #  motion_title
+  #  motion_body
+  #
+  #  nav.set_section('signpost_hearing_info')
+  #  has_hearing_info
+  #  if has_hearing_info == True:
+  #    hearing_at_court
+  #    hearing_time
+  #    judge.name
+  #    trial_court_bar_number
+  #  if has_hearing_info == False:
+  #    no_hearing_info_ok
+  #  set_parts(subtitle=str(users[0]))
+  #  
+  #  nav.set_section('signpost_esign')
+  #  MLH_esign
+  #  if MLH_esign == True:
+  #    signature_date
+  #    
+  #  nav.set_section('signpost_download')
+  #  # is it necessary to call these so that their value can be accessed when filling form?
+  #  #  plaintiffs
+  #  #  defendants
+  #  #  plaintiffs_attorney
+  #  #  defendants_attorney
   interview_order_simpmotion = True
 ---
 only sets: add_or_remove_users
@@ -1289,111 +1289,111 @@ attachments:
     skip undefined: False
     pdf template file: simpmotion.pdf
     editable: False
-    fields:
-      - "trial_court_circuit": |
-            % if the_court.type == 'circuit':
-            ${ the_court.number }
-            % endif
-      - "trial_court_district": |
-            % if the_court.type == 'district':
-            ${ the_court.number }
-            % endif
-      - "trial_court_county": ${ the_court.address.county }
-      - "docket_number": ${ docket_number }
-      - "trial_court_address_on_one_line": ${ the_court.address.on_one_line() }
-      - "trial_court_phone_number": ${ the_court.phone }
-      - "plaintiffs_name": |
-            % if user_ask_role == 'defendant' or (user_ask_role == 'plaintiff' and (multiple_users == False or user_first_party == True)):
-            ${ plaintiffs[0] }
-            % else:
-            ${ plaintiffs[1] }
-            % endif
-      - "defendants_name": |       
-            % if defendants.number_gathered() == 0:
-            ${ "N/A" }
-            % elif user_ask_role == 'plaintiff' or (user_ask_role == 'defendant' and (multiple_users == False or user_first_party == True)):
-            ${ defendants[0] }
-            % else:
-            ${ defendants[1] }
-            % endif
-      - "plaintiffs_attorney_bar_number": |
-            % if plaintiffs_attorney:
-            ${ plaintiffs_attorney.bar_number }
-            % endif
-      - "plaintiffs_attorney_name": |
-            % if plaintiffs_attorney:
-            ${ plaintiffs_attorney }
-            % else:
-            Self-represented
-            % endif
-      - "defendants_attorney_name": |
-            % if defendants.number_gathered() == 0:
-            ${ 'N/A' }
-            % elif defendants_attorney:
-            ${ defendants_attorney }
-            % else:
-            Self-represented
-            % endif
-      - "defendants_attorney_bar_number": |
-            % if defendants_attorney:
-            ${ defendants_attorney.bar_number }
-            % endif
-      - "plaintiffs_attorney_address_block": |
-            % if plaintiffs_attorney:
-            ${ plaintiffs_attorney.address.block() }
-            % elif (user_ask_role == 'plaintiff' and multiple_users and not user_first_party and not first_party_user_side_has_lawyer):
-            ${ plaintiffs[1].address.block() }
-            % elif len(plaintiffs.complete_elements()) > 0:
-            ${ plaintiffs[0].address.block() }
-            % endif
-      - "defendants_attorney_address_block": |
-            % if defendants_attorney:
-            ${ defendants_attorney.address.block() }
-            % elif (user_ask_role == 'defendant' and multiple_users and not user_first_party and not first_party_user_side_has_lawyer):
-            ${ defendants[1].address.block() }
-            % elif len(defendants.complete_elements()) > 0:
-            ${ defendants[0].address.block() }
-            % endif     
-      - "plaintiffs_attorney_phone_number": |
-            % if plaintiffs_attorney:
-            ${ plaintiffs_attorney.phone_number }
-            % elif (user_ask_role == 'plaintiff' and multiple_users and not user_first_party and not first_party_user_side_has_lawyer):
-            ${ plaintiffs[1].phone_number }
-            % elif len(plaintiffs.complete_elements()) > 0:
-            ${ plaintiffs[0].phone_number }
-            % endif
-      - "defendants_attorney_phone_number": |
-            % if defendants_attorney:
-            ${ defendants_attorney.phone_number }
-            % elif (user_ask_role == 'defendant' and multiple_users and not user_first_party and not first_party_user_side_has_lawyer ):
-            ${ defendants[1].phone_number }
-            % elif len(defendants.complete_elements()) > 0:
-            ${ defendants[0].phone_number }
-            % endif
-      - "motion_title": ${ motion_title }
-      - "users_name": ${ users[0] }
-      - "trial_court_name": ${ judge.name if has_hearing_info else "" }
-      - "hearing_time": ${ hearing_time if has_hearing_info else "" }
-      - "trial_court_bar_number": ${ trial_court_bar_number if has_hearing_info else "" }
-      - "hearing_date": ${ format_date(hearing_date) if has_hearing_info else ""}
-      - "hearing_at_court_yes": ${ hearing_at_court if has_hearing_info else "" }
-      - "hearing_at_court_no": ${ not hearing_at_court if has_hearing_info else "" }
-      - "hearing_address_on_one_line": |
-            % if has_hearing_info and not hearing_at_court:
-            ${ hearing_address_on_one_line }
-            % endif
-      # inserts only the "safe" number of characters here, seems to be set via the trigger value, formatting
-      - "motion_body": ${ indent(indent(single_to_double_newlines(simpmotion_attachment.safe_value('motion_body', preserve_newlines=True)))) }
-      - "signature_date": |
-            % if MLH_esign == True:
-            ${ signature_date }
-            % else:
-            ${ '' }
-            % endif
-      # It's a signature: test which file version this is; leave empty unless it's the final version)
-      - "users_signature_1": |
-            % if MLH_esign == True:
-            ${ users[0] }
-            % else:
-            ${ '' }
-            % endif
+#    fields:
+#      - "trial_court_circuit": |
+#            % if the_court.type == 'circuit':
+#            ${ the_court.number }
+#            % endif
+#      - "trial_court_district": |
+#            % if the_court.type == 'district':
+#            ${ the_court.number }
+#            % endif
+#      - "trial_court_county": ${ the_court.address.county }
+#      - "docket_number": ${ docket_number }
+#      - "trial_court_address_on_one_line": ${ the_court.address.on_one_line() }
+#      - "trial_court_phone_number": ${ the_court.phone }
+#      - "plaintiffs_name": |
+#            % if user_ask_role == 'defendant' or (user_ask_role == 'plaintiff' and (multiple_users == False or user_first_party == True)):
+#            ${ plaintiffs[0] }
+#            % else:
+#            ${ plaintiffs[1] }
+#            % endif
+#      - "defendants_name": |       
+#            % if defendants.number_gathered() == 0:
+#            ${ "N/A" }
+#            % elif user_ask_role == 'plaintiff' or (user_ask_role == 'defendant' and (multiple_users == False or user_first_party == True)):
+#            ${ defendants[0] }
+#            % else:
+#            ${ defendants[1] }
+#            % endif
+#      - "plaintiffs_attorney_bar_number": |
+#            % if plaintiffs_attorney:
+#            ${ plaintiffs_attorney.bar_number }
+#            % endif
+#      - "plaintiffs_attorney_name": |
+#            % if plaintiffs_attorney:
+#            ${ plaintiffs_attorney }
+#            % else:
+#            Self-represented
+#            % endif
+#      - "defendants_attorney_name": |
+#            % if defendants.number_gathered() == 0:
+#            ${ 'N/A' }
+#            % elif defendants_attorney:
+#            ${ defendants_attorney }
+#            % else:
+#            Self-represented
+#            % endif
+#      - "defendants_attorney_bar_number": |
+#            % if defendants_attorney:
+#            ${ defendants_attorney.bar_number }
+#            % endif
+#      - "plaintiffs_attorney_address_block": |
+#            % if plaintiffs_attorney:
+#            ${ plaintiffs_attorney.address.block() }
+#            % elif (user_ask_role == 'plaintiff' and multiple_users and not user_first_party and not first_party_user_side_has_lawyer):
+#            ${ plaintiffs[1].address.block() }
+#            % elif len(plaintiffs.complete_elements()) > 0:
+#            ${ plaintiffs[0].address.block() }
+#            % endif
+#      - "defendants_attorney_address_block": |
+#            % if defendants_attorney:
+#            ${ defendants_attorney.address.block() }
+#            % elif (user_ask_role == 'defendant' and multiple_users and not user_first_party and not first_party_user_side_has_lawyer):
+#            ${ defendants[1].address.block() }
+#            % elif len(defendants.complete_elements()) > 0:
+#            ${ defendants[0].address.block() }
+#            % endif     
+#      - "plaintiffs_attorney_phone_number": |
+#            % if plaintiffs_attorney:
+#            ${ plaintiffs_attorney.phone_number }
+#            % elif (user_ask_role == 'plaintiff' and multiple_users and not user_first_party and not first_party_user_side_has_lawyer):
+#            ${ plaintiffs[1].phone_number }
+#            % elif len(plaintiffs.complete_elements()) > 0:
+#            ${ plaintiffs[0].phone_number }
+#            % endif
+#      - "defendants_attorney_phone_number": |
+#            % if defendants_attorney:
+#            ${ defendants_attorney.phone_number }
+#            % elif (user_ask_role == 'defendant' and multiple_users and not user_first_party and not first_party_user_side_has_lawyer ):
+#            ${ defendants[1].phone_number }
+#            % elif len(defendants.complete_elements()) > 0:
+#            ${ defendants[0].phone_number }
+#            % endif
+#      - "motion_title": ${ motion_title }
+#      - "users_name": ${ users[0] }
+#      - "trial_court_name": ${ judge.name if has_hearing_info else "" }
+#      - "hearing_time": ${ hearing_time if has_hearing_info else "" }
+#      - "trial_court_bar_number": ${ trial_court_bar_number if has_hearing_info else "" }
+#      - "hearing_date": ${ format_date(hearing_date) if has_hearing_info else ""}
+#      - "hearing_at_court_yes": ${ hearing_at_court if has_hearing_info else "" }
+#      - "hearing_at_court_no": ${ not hearing_at_court if has_hearing_info else "" }
+#      - "hearing_address_on_one_line": |
+#            % if has_hearing_info and not hearing_at_court:
+#            ${ hearing_address_on_one_line }
+#            % endif
+#      # inserts only the "safe" number of characters here, seems to be set via the trigger value, formatting
+#      - "motion_body": ${ indent(indent(single_to_double_newlines(simpmotion_attachment.safe_value('motion_body', preserve_newlines=True)))) }
+#      - "signature_date": |
+#            % if MLH_esign == True:
+#            ${ signature_date }
+#            % else:
+#            ${ '' }
+#            % endif
+#      # It's a signature: test which file version this is; leave empty unless it's the final version)
+#      - "users_signature_1": |
+#            % if MLH_esign == True:
+#            ${ users[0] }
+#            % else:
+#            ${ '' }
+#            % endif
